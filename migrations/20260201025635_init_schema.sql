@@ -5,12 +5,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS categories (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  slug TEXT NOT NULL, -- sample: quan-xi =]]
+  slug TEXT NOT NULL UNIQUE, -- sample: quan-xi =]]
   parent_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 -- TABLE: Products
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -31,7 +30,8 @@ CREATE TABLE IF NOT EXISTS product_variants (
   sku TEXT NOT NULL UNIQUE, -- unique stock keeping unit(example: TS-WHITE-L)
   price_override DECIMAL(12,2),
   stock_quantity INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- TABLE: Set Indexes for quick search

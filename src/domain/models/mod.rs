@@ -1,3 +1,3 @@
-pub mod products;
+pub mod product;
 
-pub use products::*;
+pub use product::*;

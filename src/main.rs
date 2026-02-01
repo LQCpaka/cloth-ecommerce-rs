@@ -1,5 +1,6 @@
 mod config;
 mod domain;
+mod repositories;
 
 use axum::{Router, routing::get};
 use config::Config;
