@@ -1,0 +1,52 @@
+[package]
+name = "axum-ecommerce"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+# web framework
+axum = "0.8.8"
+tower = "0.5"
+tower-http = {version = "0.6.8", features = ["fs","trace","cors", "compression-full"]}
+
+# Async runtime
+tokio = { version = "1.28", features = ["full"] }
+
+# Database
+sqlx = {version = "0.8.6", features = ["runtime-tokio", "postgres", "chrono", "uuid","migrate"]}
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Auth & Security
+jsonwebtoken = "10.3.0"
+bcrypt = "0.18"
+uuid = {version = "1.0", features = ["serde", "v4"]}
+
+# Validation
+validator = {version = "0.20", features = ["derive"]}
+
+# Time
+chrono = {version = "0.4", features = ["serde"]}
+
+#Enviroment management
+dotenvy = "0.15.7"
+
+# Tracing & Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error Handling
+anyhow = "1.0.100"
+thiserror = "2.0.18"
+
+# Others
+bigdecimal = {version ="0.4.10", features = ["serde"]}
+
+
+[dev-dependencies]
+reqwest = {version = "0.13.1", features = ["json"]} 
+
+
