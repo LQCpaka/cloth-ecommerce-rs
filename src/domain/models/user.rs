@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 // DB type: user_role_type
 #[derive(Debug, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "user-role_type", rename_all = "lowercase")]
+#[sqlx(type_name = "user_role_type", rename_all = "lowercase")]
 pub enum UserRole {
     User,
     Seller,
@@ -17,7 +17,7 @@ pub enum UserRole {
 
 // DB type: user_status_type
 #[derive(Debug, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "user-role_type", rename_all = "lowercase")]
+#[sqlx(type_name = "user_status_type", rename_all = "lowercase")]
 pub enum UserStatus {
     Unverified,
     Ative,
@@ -26,7 +26,7 @@ pub enum UserStatus {
 
 // DB type: auth_provider_type
 #[derive(Debug, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "user-role_type", rename_all = "lowercase")]
+#[sqlx(type_name = "auth_provider_type", rename_all = "lowercase")]
 pub enum AuthProvider {
     Local,
     Google,
@@ -46,7 +46,7 @@ pub struct User {
 
     pub name: String,
     pub avatar_url: Option<String>,
-    pub description: String,
+    pub description: Option<String>,
 
     pub role: UserRole,
     pub status: UserStatus,
@@ -63,6 +63,7 @@ pub struct UserSession {
     pub id: Uuid,
     pub user_id: Uuid,
     pub refresh_token: String,
+    pub user_agent: Option<String>,
     pub expires_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
 }
