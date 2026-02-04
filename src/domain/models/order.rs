@@ -75,6 +75,19 @@ pub struct UserAddress {
     pub city: String,
 
     pub is_default: bool,
+
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct CartItem {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub variant_id: Uuid,
+
+    pub quantity: i32,
+
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

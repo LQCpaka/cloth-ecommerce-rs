@@ -55,6 +55,23 @@ CREATE TABLE IF NOT EXISTS order_items(
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- TABLE: Cart
+CREATE TABLE IF NOT EXISTS cart_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
+
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  -- Important part: Bound
+  -- A user cannot own more than 2 same product (line), like if you add to card, i should be 1 item and increase amount(quantity), not split to 2 items
+  -- Only update quantity if user want to add more
+  UNIQUE(user_id, variant_id)
+);
+
 -- Indexes
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
