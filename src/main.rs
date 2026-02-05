@@ -1,3 +1,5 @@
+mod config;
+
 use axum::{Router, routing::get};
 use config::Config;
 use sqlx::postgres::{PgPool, PgPoolOptions};
