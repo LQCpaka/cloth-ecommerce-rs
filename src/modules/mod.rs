@@ -1,2 +1,3 @@
-pub mod dto;
-pub mod models;
+pub mod user;
+
+pub use user::*;

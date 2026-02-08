@@ -20,7 +20,7 @@ pub enum UserRole {
 #[sqlx(type_name = "user_status_type", rename_all = "lowercase")]
 pub enum UserStatus {
     Unverified,
-    Ative,
+    Active,
     Banned,
 }
 

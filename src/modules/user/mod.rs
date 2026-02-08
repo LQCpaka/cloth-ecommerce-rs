@@ -1,7 +1,7 @@
-pub mod order;
-pub mod product;
-pub mod user;
+pub mod dto;
+pub mod model;
+pub mod repository;
 
-pub use order::*;
-pub use product::*;
-pub use user::*;
+pub use dto::*;
+pub use model::*;
+pub use repository::*;
