@@ -1,7 +1,5 @@
-use crate::model::{AuthProvider, User, UserSession, UserStatus};
-use anyhow::Ok;
+use crate::model::{AuthProvider, User, UserRole, UserStatus};
 use sqlx::{Error, PgPool};
-use uuid::Uuid;
 
 pub struct UserRepository {
     pool: PgPool,
@@ -23,10 +21,22 @@ impl UserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            INSERT INTO users (name, email, password_hash, role, status, provider, provider_id)
-            VALUES ($1, $2, $3, 'user', 'unverified', 'local', NULL)
-            RETURNING *
-            "#,
+                INSERT INTO users (name, email, password_hash, role, status, provider, provider_id)
+                VALUES ($1, $2, $3, 'user', 'unverified', 'local', NULL)
+                RETURNING
+                    id,
+                    email,
+                    password_hash,
+                    name,
+                    avatar_url,
+                    description,
+                    role as "role: UserRole",
+                    status as "status: UserStatus",
+                    provider as "provider: AuthProvider",
+                    provider_id,
+                    created_at,
+                    updated_at
+                "#,
             name,
             email,
             password_hash
@@ -38,9 +48,29 @@ impl UserRepository {
     }
 
     pub async fn find_by_email(&self, email: &str) -> Result<Option<User>, Error> {
-        let user = sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", email)
-            .fetch_optional(&self.pool)
-            .await?;
+        let user = sqlx::query_as!(
+            User,
+            r#"
+                SELECT
+                    id,
+                    email,
+                    password_hash,
+                    name,
+                    avatar_url,
+                    description,
+                    role as "role: UserRole",
+                    status as "status: UserStatus",
+                    provider as "provider: AuthProvider",
+                    provider_id,
+                    created_at,
+                    updated_at
+                FROM users
+                WHERE email = $1
+                "#,
+            email
+        )
+        .fetch_optional(&self.pool)
+        .await?;
 
         Ok(user)
     }
