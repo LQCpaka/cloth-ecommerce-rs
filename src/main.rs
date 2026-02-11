@@ -1,5 +1,6 @@
 mod config;
 mod modules;
+mod shared;
 
 use crate::modules::user::*;
 use axum::{Router, routing::get};
