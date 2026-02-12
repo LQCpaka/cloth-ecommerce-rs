@@ -1,4 +1,4 @@
-use crate::model::{AuthProvider, User, UserRole, UserStatus};
+use crate::modules::user::model::{AuthProvider, User, UserRole, UserStatus};
 use sqlx::{Error, PgPool};
 
 pub struct UserRepository {

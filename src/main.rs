@@ -1,18 +1,16 @@
+mod app_state;
 mod config;
 mod modules;
 mod shared;
 
-use crate::modules::user::*;
-use axum::{Router, routing::get};
+use crate::app_state::AppState;
+use axum::Router;
 use config::Config;
-use sqlx::postgres::{PgPool, PgPoolOptions};
+use log::LevelFilter;
+use sqlx::ConnectOptions;
+use sqlx::postgres::PgPoolOptions;
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-#[derive(Clone)]
-#[allow(warnings)]
-struct AppState {
-    db: PgPool,
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,11 +27,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing::info!("Starting Server... ");
 
-    // Connect to DB
+    let db_options: sqlx::postgres::PgConnectOptions = config.database_url.parse()?;
+
+    // 2. Kết nối và gọi log_statements ngay bên trong đó
     let pool = PgPoolOptions::new()
         .max_connections(10)
-        .connect(&config.database_url)
-        .await?;
+        .connect_with(db_options.log_statements(LevelFilter::Off)) // <-- Gọi liền ở đây luôn
+        .await
+        .expect("Failed to connect to Database");
 
     tracing::info!("Successfuly Connected to Database!");
 
@@ -42,8 +43,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     //Define Router (Sample, will change soon)
     let app = Router::new()
-        .route("/ping", get(check_server_status))
-        .with_state(state);
+        // Gắn module Auth vào đường dẫn /api/auth
+        // -> API sẽ là: POST http://localhost:3000/api/auth/register
+        .nest("/api/auth", modules::auth::router())
+        .with_state(state)
+        .layer(TraceLayer::new_for_http());
 
     // Start server
     let addr = format!("{}:{}", config.server_host, config.server_port);
@@ -56,10 +60,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     Ok(())
-}
-
-async fn check_server_status() -> &'static str {
-    "Pong..........!"
 }
 
 async fn shutdown_signal() {

@@ -50,6 +50,7 @@ argon2 = {version="0.5", features = ["std"]}
 
 # rand number
 rand_core = {version="0.6", features = ["std"]}
+log = "0.4.29"
 
 [dev-dependencies]
 reqwest = {version = "0.13.1", features = ["json"]}

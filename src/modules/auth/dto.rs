@@ -22,7 +22,7 @@ fn validate_password(password: &str) -> Result<(), ValidationError> {
     let has_letter = password.chars().any(|c| c.is_ascii_alphabetic());
     let has_digit = password.chars().any(|c| c.is_ascii_digit());
 
-    if !has_letter || has_digit {
+    if !has_letter || !has_digit {
         return Err(ValidationError::new("password_format"));
     }
 
