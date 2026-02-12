@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS users (
   provider_id TEXT, -- Goolge ID
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
 );
 
 -- TABLE: User Session
