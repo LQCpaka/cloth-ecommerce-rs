@@ -13,6 +13,14 @@ pub struct RegisterRequest {
     pub password: String,
 }
 
+#[derive(Deserialize, Serialize, Validate)]
+pub struct Login {
+    #[validate(email(message = "Invalid Email"))]
+    pub email: String,
+
+    #[validate(length(min = 6, max = 20), custom(function = "validate_password"))]
+    pub password: String,
+}
 fn validate_password(password: &str) -> Result<(), ValidationError> {
     //Just incase length doesnt work or overrdided by something else, idk
     if password.len() < 6 || password.len() > 20 {
