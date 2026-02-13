@@ -50,10 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         email_service: Arc::new(email_service),
     };
 
-    //Define Router (Sample, will change soon)
     let app = Router::new()
-        // Gắn module Auth vào đường dẫn /api/auth
-        // -> API sẽ là: POST http://localhost:3000/api/auth/register
         .nest("/api/auth", modules::auth::router())
         .with_state(state)
         .layer(TraceLayer::new_for_http());

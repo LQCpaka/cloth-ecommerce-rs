@@ -38,7 +38,7 @@ impl EmailService for SmtpEmailService {
                     .parse()
                     .map_err(|e| format!("Email from error: {}", e))?,
             )
-            .to(to.parse().map_err(|e| format!("Email to error: {}"))?)
+            .to(to.parse().map_err(|e| format!("Email to error: {}", e))?)
             .subject(subject)
             .header(ContentType::TEXT_HTML)
             .body(body)
