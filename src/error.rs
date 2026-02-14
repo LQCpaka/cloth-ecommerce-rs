@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use axum::{
     Json,
     http::StatusCode,
@@ -78,10 +80,12 @@ pub enum AppError {
 
 //Error response body
 #[derive(Serialize)]
-struct ErrorResponse {
-    error: String,
+pub struct ErrorResponse {
+    pub error: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    details: Option<String>,
+    pub details: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<HashMap<String, Vec<String>>>,
 }
 
 impl IntoResponse for AppError {
@@ -148,6 +152,7 @@ impl IntoResponse for AppError {
         let body = Json(ErrorResponse {
             error: error_message.to_string(),
             details,
+            fields: None,
         });
 
         (status, body).into_response()

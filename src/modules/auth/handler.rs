@@ -3,7 +3,7 @@ use std::sync::Arc;
 use validator::Validate;
 
 use crate::app_state::AppState;
-use crate::error::AppError;
+use crate::error::{AppError, ErrorResponse};
 use crate::modules::auth::dto::RegisterRequest;
 use crate::modules::auth::repository::UserRepository;
 use crate::modules::auth::service::AuthService;
@@ -17,9 +17,14 @@ pub async fn register(
     // 1. Validate Input (Giữ nguyên)
     // Nếu dữ liệu đầu vào sai (ví dụ thiếu email, password ngắn), trả về lỗi 400 ngay
     if let Err(e) = payload.validate() {
-        // Trả về Ok(...) vì đây là phản hồi HTTP hợp lệ (dù là mã lỗi 400)
         let clean_errors = flatten_errors(e);
-        return Ok((StatusCode::BAD_REQUEST, Json(clean_errors)).into_response());
+        let response = ErrorResponse {
+            error: "Validation Failed".to_string(),
+            details: Some("Dữ liệu đầu vào không hợp lệ".to_string()),
+            fields: Some(clean_errors),
+        };
+
+        return Ok((StatusCode::BAD_REQUEST, Json(response)).into_response());
     }
 
     // 2. Dependency Injection (Thủ công)
