@@ -12,7 +12,8 @@ use config::Config;
 use log::LevelFilter;
 use sqlx::ConnectOptions;
 use sqlx::postgres::PgPoolOptions;
-use tower_http::trace::TraceLayer;
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
+use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -35,7 +36,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 2. Kết nối và gọi log_statements ngay bên trong đó
     let pool = PgPoolOptions::new()
         .max_connections(10)
-        .connect_with(db_options.log_statements(LevelFilter::Off)) // <-- Gọi liền ở đây luôn
+        //Turn off [DEBUG] querry cause eyes config
+        .connect_with(db_options.log_statements(LevelFilter::Off))
         .await
         .expect("Failed to connect to Database");
 
@@ -49,7 +51,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .nest("/api/auth", modules::auth::router())
         .with_state(state)
-        .layer(TraceLayer::new_for_http());
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(Level::INFO)) // INFO thay vì DEBUG
+                .on_response(DefaultOnResponse::new().level(Level::INFO)),
+        );
 
     // Start server
     let addr = format!("{}:{}", config.server_host, config.server_port);

@@ -1,15 +1,20 @@
+use std::borrow::Cow;
+
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
 #[derive(Deserialize, Serialize, Validate)]
 pub struct RegisterRequest {
-    #[validate(length(min = 1, message = "Name can't be empty"))]
+    #[validate(length(min = 1, message = "Tên không được để trống"))]
     pub name: String,
 
-    #[validate(email(message = "Invalid Email"))]
+    #[validate(email(message = "Email không hợp lệ"))]
     pub email: String,
 
-    #[validate(length(min = 6, max = 20), custom(function = "validate_password"))]
+    #[validate(
+        length(min = 6, max = 20, message = "Mật khẩu phải từ 6-20 ký tự"),
+        custom(function = "validate_password")
+    )]
     pub password: String,
 }
 
@@ -21,17 +26,15 @@ pub struct Login {
     #[validate(length(min = 6, max = 20), custom(function = "validate_password"))]
     pub password: String,
 }
-fn validate_password(password: &str) -> Result<(), ValidationError> {
-    //Just incase length doesnt work or overrdided by something else, idk
-    if password.len() < 6 || password.len() > 20 {
-        return Err(ValidationError::new("length"));
-    }
 
+fn validate_password(password: &str) -> Result<(), ValidationError> {
     let has_letter = password.chars().any(|c| c.is_ascii_alphabetic());
     let has_digit = password.chars().any(|c| c.is_ascii_digit());
 
     if !has_letter || !has_digit {
-        return Err(ValidationError::new("password_format"));
+        let mut error = ValidationError::new("password_complexity");
+        error.message = Some(Cow::from("Mật khẩu phải chứa cả chữ cái và số"));
+        return Err(error);
     }
 
     Ok(())

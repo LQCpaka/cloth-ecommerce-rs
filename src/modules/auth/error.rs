@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 // modules/auth/error.rs
 use crate::error::AppError;
 use thiserror::Error;
+use validator::ValidationErrors;
 
 #[derive(Error, Debug)]
 pub enum AuthError {

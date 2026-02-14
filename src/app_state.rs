@@ -13,10 +13,10 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(config: &Config, db: PgPool) -> Self {
-        let mail_service: Arc<dyn MailService> = Arc::new(ResendMailService::new(
-            config.resend_api_key.clone(),
-            config.from_email.clone(),
-        ));
+        let email = format!("Shop Cua Vo <{}>", config.from_email.clone());
+
+        let mail_service: Arc<dyn MailService> =
+            Arc::new(ResendMailService::new(config.resend_api_key.clone(), email));
 
         Self { db, mail_service }
     }

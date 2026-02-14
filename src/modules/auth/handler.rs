@@ -7,6 +7,7 @@ use crate::error::AppError;
 use crate::modules::auth::dto::RegisterRequest;
 use crate::modules::auth::repository::UserRepository;
 use crate::modules::auth::service::AuthService;
+use crate::shared::utils::flattern_error::flatten_errors;
 
 //API: [POST] - api/auth/register
 pub async fn register(
@@ -17,7 +18,8 @@ pub async fn register(
     // Nếu dữ liệu đầu vào sai (ví dụ thiếu email, password ngắn), trả về lỗi 400 ngay
     if let Err(e) = payload.validate() {
         // Trả về Ok(...) vì đây là phản hồi HTTP hợp lệ (dù là mã lỗi 400)
-        return Ok((StatusCode::BAD_REQUEST, Json(e)).into_response());
+        let clean_errors = flatten_errors(e);
+        return Ok((StatusCode::BAD_REQUEST, Json(clean_errors)).into_response());
     }
 
     // 2. Dependency Injection (Thủ công)

@@ -6,6 +6,19 @@ use axum::{
 use serde::Serialize;
 use thiserror::Error;
 
+// Env config Error
+#[derive(Error, Debug)]
+pub enum ConfigError {
+    #[error("Missing enviroment variable: {0}")]
+    MissingEnvVar(String),
+    #[error("Invalid port number: {0}")]
+    InvalidPort(#[from] std::num::ParseIntError),
+    #[error("Environment error: {0}")]
+    EnvError(#[from] dotenvy::Error),
+    #[error("Invalid email format")]
+    InvalidEmailFormat(String),
+}
+
 // Application-wide error type
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -139,17 +152,4 @@ impl IntoResponse for AppError {
 
         (status, body).into_response()
     }
-}
-
-// Env config Error
-#[derive(Error, Debug)]
-pub enum ConfigError {
-    #[error("Missing enviroment variable: {0}")]
-    MissingEnvVar(String),
-    #[error("Invalid port number: {0}")]
-    InvalidPort(#[from] std::num::ParseIntError),
-    #[error("Environment error: {0}")]
-    EnvError(#[from] dotenvy::Error),
-    #[error("Invalid email format")]
-    InvalidEmailFormat(String),
 }
