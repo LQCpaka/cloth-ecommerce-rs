@@ -15,7 +15,7 @@ pub async fn register(
 ) -> impl IntoResponse {
     //Dependency Injection
     let user_repo = Arc::new(UserRepository::new(state.db.clone()));
-    let auth_service = AuthService::new(user_repo);
+    let auth_service = AuthService::new(user_repo, state.email_service.clone());
 
     if let Err(e) = payload.validate() {
         return (StatusCode::BAD_REQUEST, Json(e)).into_response();

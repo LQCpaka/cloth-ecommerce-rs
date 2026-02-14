@@ -1,4 +1,3 @@
-use rand::Rng;
 use std::sync::Arc;
 
 use crate::{
@@ -43,17 +42,18 @@ impl AuthService {
             .await
             .map_err(|e| AuthError::DatabaseError(e.to_string()))?;
 
-        let email_clone = req.email.clone();
+        let email_to_send = new_user.email.clone();
+        let name_to_send = new_user.name.clone();
         let email_service_clone = self.email_service.clone();
 
         tokio::spawn(async move {
             let body = format!(
                 "<h1>Xin chào {}!</h1><p>Mã xác thực của bạn là: <b>:{}</b></p><p>Mã xác thực sẽ hết hạn sau 5 phút.</p>",
-                req.name, otp_code
+                name_to_send, otp_code
             );
 
             if let Err(e) = email_service_clone
-                .send_email(email_clone, "Mã xác thực đăng ký".to_string(), body)
+                .send_email(email_to_send, "Mã xác thực đăng ký".to_string(), body)
                 .await
             {
                 tracing::error!("Failed to send OTP email: {}", e)

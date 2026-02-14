@@ -5,7 +5,7 @@ mod infrastructure;
 mod modules;
 mod shared;
 
-use crate::{app_state::AppState, infrastructure::mail::smtp::SmtpEmailService};
+use crate::{app_state::AppState, infrastructure::mail::resend::SmtpEmailService};
 
 use axum::Router;
 use config::Config;
