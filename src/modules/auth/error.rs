@@ -1,20 +1,52 @@
+// modules/auth/error.rs
+use crate::error::AppError;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum AuthError {
-    #[error("Email already exists")]
-    EmailAlreadyExists,
+    #[error("User already exists")]
+    UserAlreadyExists,
 
-    #[error("Security Error: {0}")]
+    #[error("User not found")]
+    UserNotFound,
+
+    #[error("Invalid token")]
+    InvalidToken,
+
+    #[error("Token expired")]
+    TokenExpired,
+
+    #[error("Email not verified")]
+    EmailNotVerified,
+
+    #[error("Weak password: {0}")]
+    WeakPassword(String),
+
+    #[error("Security error: {0}")]
     SecurityError(String),
 
-    #[error("Database Error: {0}")]
-    DatabaseError(String),
+    #[error("Database error: {0}")]
+    DatabaseError(#[from] sqlx::Error),
 }
 
-//Convert sqlx::Error -> AuthErr
-impl From<sqlx::Error> for AuthError {
-    fn from(err: sqlx::Error) -> Self {
-        AuthError::DatabaseError(err.to_string())
+// Convert AuthError -> AppError
+impl From<AuthError> for AppError {
+    fn from(err: AuthError) -> Self {
+        match err {
+            AuthError::UserAlreadyExists => AppError::Conflict("User already exists".to_string()),
+            AuthError::UserNotFound => AppError::NotFound("User not found".to_string()),
+            AuthError::InvalidToken => AppError::Unauthorized("Invalid token".to_string()),
+            AuthError::TokenExpired => AppError::Unauthorized("Token expired".to_string()),
+            AuthError::EmailNotVerified => AppError::Forbidden("Email not verified".to_string()),
+            AuthError::WeakPassword(msg) => AppError::Validation(format!("Weak password: {}", msg)),
+            AuthError::SecurityError(msg) => {
+                tracing::error!("Auth Security Error: {}", msg);
+                AppError::Internal
+            }
+            AuthError::DatabaseError(e) => {
+                tracing::error!("Auth Database Error: {:?}", e);
+                AppError::Database(e)
+            }
+        }
     }
 }

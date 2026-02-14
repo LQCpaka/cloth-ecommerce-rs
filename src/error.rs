@@ -21,8 +21,8 @@ pub enum AppError {
     #[error("Authentication failed: {0}")]
     Unauthorized(String),
 
-    #[error("Access forbiden: {0}")]
-    Forbiden(String),
+    #[error("Access Forbidden: {0}")]
+    Forbidden(String),
 
     #[error("Invalid credentials")]
     InvalidCredentials,

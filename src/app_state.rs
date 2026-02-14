@@ -1,9 +1,23 @@
-use crate::shared::ports::mail::EmailService;
 use sqlx::PgPool;
 use std::sync::Arc;
+
+use crate::{
+    config::Config, infrastructure::mail::ResendMailService, shared::ports::mail::MailService,
+};
 
 #[derive(Clone)]
 pub struct AppState {
     pub db: PgPool,
-    pub email_service: Arc<dyn EmailService>,
+    pub mail_service: Arc<dyn MailService>,
+}
+
+impl AppState {
+    pub fn new(config: &Config, db: PgPool) -> Self {
+        let mail_service: Arc<dyn MailService> = Arc::new(ResendMailService::new(
+            config.resend_api_key.clone(),
+            config.from_email.clone(),
+        ));
+
+        Self { db, mail_service }
+    }
 }

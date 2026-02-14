@@ -5,14 +5,13 @@ mod infrastructure;
 mod modules;
 mod shared;
 
-use crate::{app_state::AppState, infrastructure::mail::resend::SmtpEmailService};
+use crate::app_state::AppState;
 
 use axum::Router;
 use config::Config;
 use log::LevelFilter;
 use sqlx::ConnectOptions;
 use sqlx::postgres::PgPoolOptions;
-use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -43,12 +42,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Successfuly Connected to Database!");
 
     //Email service
-    let email_service = SmtpEmailService::new(config.smtp_host, config.smtp_user, config.smtp_pass);
+    tracing::info!("Email service initialized");
     // Create AppState
-    let state = AppState {
-        db: pool,
-        email_service: Arc::new(email_service),
-    };
+    let state = AppState::new(&config, pool);
 
     let app = Router::new()
         .nest("/api/auth", modules::auth::router())
