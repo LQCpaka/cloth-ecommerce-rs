@@ -20,10 +20,13 @@ pub struct RegisterRequest {
 
 #[derive(Deserialize, Serialize, Validate)]
 pub struct Login {
-    #[validate(email(message = "Invalid Email"))]
+    #[validate(email(message = "Email không hợp lệ"))]
     pub email: String,
 
-    #[validate(length(min = 6, max = 20), custom(function = "validate_password"))]
+    #[validate(
+        length(min = 6, max = 20, message = "Mật khẩu phải từ 6-20 ký tự"),
+        custom(function = "validate_password")
+    )]
     pub password: String,
 }
 

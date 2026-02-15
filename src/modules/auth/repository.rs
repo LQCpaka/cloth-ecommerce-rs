@@ -90,4 +90,29 @@ impl UserRepository {
 
         Ok(())
     }
+
+    pub async fn login_user(&self, email: String, password_hash: String) -> Result<User, Error> {
+        let user = sqlx::query_as!(
+            User,
+            r#"
+                SELECT
+                id,
+                        name,
+                        email,
+                        password_hash,
+                        role as "role: UserRole", -- Nếu role cũng là enum thì ép kiểu thế này
+                        provider as "provider: AuthProvider", -- 👈 ÉP KIỂU Ở ĐÂY NÈ VỢ
+                        created_at,
+                        updated_at
+                FROM users
+                WHERE users.email = $1
+                AND users.password_hash = $2
+            "#,
+            email,
+            password_hash
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(user)
+    }
 }
