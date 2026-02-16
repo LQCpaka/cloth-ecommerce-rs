@@ -11,8 +11,11 @@ use crate::{
         user::model::{User, UserStatus},
     },
     shared::{
-        ports::mail::{EmailPayload, MailService},
-        services::PasswordService,
+        ports::mail::MailService,
+        services::{
+            PasswordService,
+            email_sample::{EmailConfig, rensend_verification_email, verification_email},
+        },
     },
 };
 
@@ -62,30 +65,16 @@ impl AuthService {
         let email_service_clone = self.email_service.clone();
 
         let domain_url = self.config.domain_name.clone();
-        tokio::spawn(async move {
-            let link = format!(
-                "http://{}/verify?token={}&email={}",
-                domain_url, verification_token, email_to_send
-            );
 
-            let html_body = format!(
-                "<h3>Chào {}!</h3><p>Vui lòng bấm vào link dưới đây để kích hoạt tài khoản:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 5 phút.</p>",
-                name_to_send, link
-            );
+        verification_email(EmailConfig {
+            email_to_send: email_to_send.clone(),
+            name_to_send: name_to_send.clone(),
+            email_service_clone: email_service_clone.clone(),
+            domain_url: domain_url.clone(),
+            verification_token: verification_token,
+        })
+        .await;
 
-            let payload = EmailPayload {
-                to: vec![email_to_send],
-                subject: "Kích hoạt tài khoản".to_string(),
-                html_body,
-                text_body: None,
-                cc: None,
-                bcc: None,
-            };
-
-            if let Err(e) = email_service_clone.send_email(payload).await {
-                tracing::error!("Failed to send verification email (OTP DB): {:?}", e)
-            }
-        });
         Ok(new_user)
     }
 
@@ -145,35 +134,14 @@ impl AuthService {
             .await
             .map_err(|e| AuthError::DatabaseError(e))?;
 
-        let email_to_send = user.email.clone();
-        let name_to_send = user.name.clone();
-        let email_service_clone = self.email_service.clone();
-
-        let domain_url = self.config.domain_name.clone();
-        tokio::spawn(async move {
-            let link = format!(
-                "http://{}/verify?token={}&email={}",
-                domain_url, verification_token, email_to_send
-            );
-
-            let html_body = format!(
-                "<h3>Chào {}!</h3><p>Đây là link kích hoạt mới của bạn:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 5 phút.</p>",
-                name_to_send, link
-            );
-
-            let payload = EmailPayload {
-                to: vec![email_to_send],
-                subject: "Kích hoạt tài khoản".to_string(),
-                html_body,
-                text_body: None,
-                cc: None,
-                bcc: None,
-            };
-
-            if let Err(e) = email_service_clone.send_email(payload).await {
-                tracing::error!("Failed to send verification email (OTP DB): {:?}", e)
-            }
-        });
+        rensend_verification_email(EmailConfig {
+            email_to_send: user.email.clone(),
+            name_to_send: user.name.clone(),
+            email_service_clone: self.email_service.clone(),
+            domain_url: self.config.domain_name.clone(),
+            verification_token: verification_token,
+        })
+        .await;
 
         Ok("Đã gửi lại email xác thực tài khoản về tài khoản, vui lòng kiểm tra lại.".to_string())
     }
