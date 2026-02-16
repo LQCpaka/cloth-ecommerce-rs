@@ -19,7 +19,6 @@ pub enum AuthError {
     #[error("Email not verified")]
     EmailNotVerified,
 
-    // ✅ Fixed: Dùng named field với correct format
     #[error("Weak password: {reason}")]
     WeakPassword { reason: String },
 

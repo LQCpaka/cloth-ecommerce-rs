@@ -10,5 +10,7 @@ pub use repository::*;
 use crate::app_state::AppState;
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/register", post(handler::register))
+    Router::new()
+        .route("/register", post(handler::register))
+        .route("/verify", post(handler::verify))
 }

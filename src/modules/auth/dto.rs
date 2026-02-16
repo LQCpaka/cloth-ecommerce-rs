@@ -35,7 +35,7 @@ pub struct VerifyEmailRequest {
     #[validate(email(message = "Email không hợp lệ"))]
     pub email: String,
 
-    #[validate(length(min = 10, max = 6, message = "Token không hợp lệ"))]
+    #[validate(length(min = 6, message = "Token không hợp lệ"))]
     pub token: String,
 }
 

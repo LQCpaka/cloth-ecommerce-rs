@@ -4,7 +4,8 @@ use validator::Validate;
 
 use crate::app_state::AppState;
 use crate::error::{AppError, ErrorResponse};
-use crate::modules::auth::dto::RegisterRequest;
+use crate::modules::auth::dto::{RegisterRequest, VerifyEmailRequest};
+use crate::modules::auth::error::AuthError;
 use crate::modules::auth::repository::UserRepository;
 use crate::modules::auth::service::AuthService;
 use crate::shared::utils::flattern_error::flatten_errors;
@@ -14,7 +15,6 @@ pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // 1. Validate Input (Giữ nguyên)
     // Nếu dữ liệu đầu vào sai (ví dụ thiếu email, password ngắn), trả về lỗi 400 ngay
     if let Err(e) = payload.validate() {
         let clean_errors = flatten_errors(e);
@@ -46,3 +46,34 @@ pub async fn register(
 }
 
 // API: [POST] - api/auth/verify/
+pub async fn verify(
+    State(state): State<AppState>,
+    Json(payload): Json<VerifyEmailRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    //Validate Input - payload
+    if let Err(e) = payload.validate() {
+        let clean_errors = flatten_errors(e);
+        let response = ErrorResponse {
+            error: "Validation Failed".to_string(),
+            details: Some("Dữ liệu xác thực không hợp lệ".to_string()),
+            fields: Some(clean_errors),
+        };
+        return Ok((StatusCode::BAD_REQUEST, Json(response)).into_response());
+    }
+
+    let user_repo = Arc::new(UserRepository::new(state.db.clone()));
+
+    let auth_service =
+        AuthService::new(user_repo, state.mail_service.clone(), state.config.clone());
+
+    let message = auth_service.verify_account(payload).await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status" : "success",
+            "message": message
+        })),
+    )
+        .into_response())
+}

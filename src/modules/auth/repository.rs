@@ -5,6 +5,11 @@ pub struct UserRepository {
     pool: PgPool,
 }
 
+pub struct OtpRecord {
+    pub id: uuid::Uuid,
+    pub expires_at: chrono::DateTime<chrono::Utc>,
+}
+
 impl UserRepository {
     // Create Func
     pub fn new(pool: PgPool) -> Self {
@@ -134,5 +139,26 @@ impl UserRepository {
             .await?;
 
         Ok(())
+    }
+
+    pub async fn find_otp_record(
+        &self,
+        user_id: uuid::Uuid,
+        code: &str,
+    ) -> Result<Option<OtpRecord>, Error> {
+        let result = sqlx::query_as!(
+            OtpRecord,
+            r#"
+                SELECT id, expires_at
+                FROM user_otps
+                WHERE user_id = $1 AND code = $2
+                "#,
+            user_id,
+            code
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(result)
     }
 }
