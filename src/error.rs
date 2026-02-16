@@ -39,8 +39,8 @@ pub enum AppError {
     #[error("Access Forbidden: {0}")]
     Forbidden(String),
 
-    #[error("Invalid credentials")]
-    InvalidCredentials,
+    #[error("Invalid credentials: {0}")]
+    InvalidCredentials(String),
 
     // Validation errors
     #[error("Validation error: {0}")]
@@ -94,7 +94,9 @@ impl IntoResponse for AppError {
             // Auth errors
             AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "Unauthorized", Some(msg)),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, "Forbidden", Some(msg)),
-            AppError::InvalidCredentials => (StatusCode::UNAUTHORIZED, "Invalid credentials", None),
+            AppError::InvalidCredentials(msg) => {
+                (StatusCode::UNAUTHORIZED, "Invalid credentials", Some(msg))
+            }
 
             // Validation errors
             AppError::Validation(msg) => (StatusCode::BAD_REQUEST, "Validation failed", Some(msg)),

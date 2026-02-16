@@ -46,8 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //Email service
     tracing::info!("Email service initialized");
     // Create AppState
-    let state = AppState::new(&config, pool);
-
+    let state = AppState::new(config, pool);
+    let addr = format!("{}:{}", state.config.server_host, state.config.server_port);
     let app = Router::new()
         .nest("/api/auth", modules::auth::router())
         .with_state(state)
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
     // Start server
-    let addr = format!("{}:{}", config.server_host, config.server_port);
+    let addr = format!("{}", addr);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
     tracing::info!("Server is listening at: {}", addr);

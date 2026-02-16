@@ -31,14 +31,19 @@ pub struct Login {
 }
 
 #[derive(Deserialize, Serialize, Validate)]
-pub struct VerifyRequest {
+pub struct VerifyEmailRequest {
     #[validate(email(message = "Email không hợp lệ"))]
     pub email: String,
 
-    #[validate(length(min = 6, max = 6, message = "Mã OTP bắt buộc phải có 6 chữ số"))]
-    pub otp: String,
+    #[validate(length(min = 10, max = 6, message = "Token không hợp lệ"))]
+    pub token: String,
 }
 
+#[derive(Deserialize, Serialize, Validate)]
+pub struct ResendVerifyEmailRequest {
+    #[validate(email(message = "Email không hợp lệ"))]
+    pub email: String,
+}
 fn validate_password(password: &str) -> Result<(), ValidationError> {
     let has_letter = password.chars().any(|c| c.is_ascii_alphabetic());
     let has_digit = password.chars().any(|c| c.is_ascii_digit());

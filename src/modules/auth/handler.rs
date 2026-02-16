@@ -32,7 +32,8 @@ pub async fn register(
     let user_repo = Arc::new(UserRepository::new(state.db.clone()));
 
     // state.email_service đã là Arc<dyn MailService> rồi, truyền thẳng vào luôn
-    let auth_service = AuthService::new(user_repo, state.mail_service.clone());
+    let auth_service =
+        AuthService::new(user_repo, state.mail_service.clone(), state.config.clone());
 
     // 3. Gọi Business Logic
     // Dấu `?` ở đây sẽ làm 2 việc:
@@ -43,3 +44,5 @@ pub async fn register(
     // 4. Thành công -> Trả về 201 Created cùng thông tin User
     Ok((StatusCode::CREATED, Json(new_user)).into_response())
 }
+
+// API: [POST] - api/auth/verify/

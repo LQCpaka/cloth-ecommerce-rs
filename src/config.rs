@@ -8,8 +8,10 @@ use std::{env, str::FromStr};
 pub struct Config {
     //db config env
     pub database_url: String,
+    //domain - host config
     pub server_host: String,
     pub server_port: u16,
+    pub domain_name: String,
     // Resend env
     pub resend_api_key: String,
     pub from_email: String,
@@ -34,6 +36,7 @@ impl Config {
 
         Ok(email)
     }
+
     pub fn init() -> Result<Config, ConfigError> {
         dotenv().ok();
 
@@ -44,7 +47,7 @@ impl Config {
         let server_port = env::var("PORT")
             .unwrap_or_else(|_| "3000".to_string())
             .parse::<u16>()?;
-
+        let domain_name = Self::get_env("DOMAIN_NAME")?;
         // Email struct - Config Env
         let resend_api_key = Self::get_env("RESEND_API_KEY")?;
 
@@ -54,6 +57,7 @@ impl Config {
             database_url,
             server_host,
             server_port,
+            domain_name,
             resend_api_key,
             from_email,
         })

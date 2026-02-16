@@ -23,7 +23,7 @@ serde_json = "1.0"
 # Auth & Security
 jsonwebtoken = "10.3.0"
 bcrypt = "0.18"
-uuid = {version = "1.0", features = ["serde", "v4"]}
+uuid = {version = "1.0", features = ["serde", "v4", "fast-rng"]}
 
 # Validation
 validator = {version = "0.20", features = ["derive"]}

@@ -1,9 +1,6 @@
-use std::collections::HashMap;
-
 // modules/auth/error.rs
 use crate::error::AppError;
 use thiserror::Error;
-use validator::ValidationErrors;
 
 #[derive(Error, Debug)]
 pub enum AuthError {
@@ -22,11 +19,30 @@ pub enum AuthError {
     #[error("Email not verified")]
     EmailNotVerified,
 
-    #[error("Weak password: {0}")]
-    WeakPassword(String),
+    // ✅ Fixed: Dùng named field với correct format
+    #[error("Weak password: {reason}")]
+    WeakPassword { reason: String },
 
     #[error("Security error: {0}")]
     SecurityError(String),
+
+    #[error("Account locked")]
+    AccountLocked,
+
+    #[error("Too many login attempts")]
+    TooManyAttempts,
+
+    #[error("Session expired")]
+    SessionExpired,
+
+    #[error("Invalid refresh token")]
+    InvalidRefreshToken,
+
+    #[error("Email verification failed")]
+    EmailVerificationFailed,
+
+    #[error("Email already verified")]
+    EmailAlreadyVerified,
 
     #[error("Database error: {0}")]
     DatabaseError(#[from] sqlx::Error),
@@ -36,16 +52,38 @@ pub enum AuthError {
 impl From<AuthError> for AppError {
     fn from(err: AuthError) -> Self {
         match err {
-            AuthError::UserAlreadyExists => AppError::Conflict("User already exists".to_string()),
-            AuthError::UserNotFound => AppError::NotFound("User not found".to_string()),
-            AuthError::InvalidToken => AppError::Unauthorized("Invalid token".to_string()),
-            AuthError::TokenExpired => AppError::Unauthorized("Token expired".to_string()),
-            AuthError::EmailNotVerified => AppError::Forbidden("Email not verified".to_string()),
-            AuthError::WeakPassword(msg) => AppError::Validation(format!("Weak password: {}", msg)),
+            // Simple conversions - dùng err.to_string()
+            AuthError::UserAlreadyExists => AppError::Conflict(err.to_string()),
+            AuthError::UserNotFound => AppError::NotFound(err.to_string()),
+            AuthError::InvalidToken | AuthError::TokenExpired | AuthError::InvalidRefreshToken => {
+                AppError::Unauthorized(err.to_string())
+            }
+            AuthError::EmailNotVerified => AppError::Forbidden(err.to_string()),
+
+            // Rate limiting / Security
+            AuthError::AccountLocked | AuthError::TooManyAttempts => {
+                AppError::Forbidden(err.to_string())
+            }
+
+            AuthError::SessionExpired => AppError::Unauthorized(err.to_string()),
+
+            // Email verification issues
+            AuthError::EmailVerificationFailed => AppError::BadRequest(err.to_string()),
+            AuthError::EmailAlreadyVerified => AppError::Conflict(err.to_string()),
+
+            // Custom handling - che giấu sensitive info
+            AuthError::WeakPassword { reason } => {
+                tracing::warn!("Weak password rejected: {}", reason);
+                AppError::Validation(
+                    "Password must be at least 6 characters and contain numbers".to_string(),
+                )
+            }
+
             AuthError::SecurityError(msg) => {
                 tracing::error!("Auth Security Error: {}", msg);
                 AppError::Internal
             }
+
             AuthError::DatabaseError(e) => {
                 tracing::error!("Auth Database Error: {:?}", e);
                 AppError::Database(e)
