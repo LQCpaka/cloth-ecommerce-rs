@@ -43,6 +43,12 @@ pub enum AuthError {
     #[error("Email already verified")]
     EmailAlreadyVerified,
 
+    #[error("Invalid Token")]
+    InvalidVerificationToken,
+
+    #[error("Token is expired")]
+    VerificationTokenExpired,
+
     #[error("Database error: {0}")]
     DatabaseError(#[from] sqlx::Error),
 }
@@ -86,6 +92,13 @@ impl From<AuthError> for AppError {
             AuthError::DatabaseError(e) => {
                 tracing::error!("Auth Database Error: {:?}", e);
                 AppError::Database(e)
+            }
+
+            AuthError::VerificationTokenExpired => {
+                AppError::BadRequest("Mã xác thực đã hết hạn".to_string())
+            }
+            AuthError::InvalidVerificationToken => {
+                AppError::BadRequest("Mã xác thực không đúng".to_string())
             }
         }
     }

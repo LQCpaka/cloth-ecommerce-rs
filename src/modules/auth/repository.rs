@@ -96,26 +96,20 @@ impl UserRepository {
         Ok(())
     }
 
-    pub async fn find_valid_otp(
-        &self,
-        user_id: uuid::Uuid,
-        code: &str,
-    ) -> Result<Option<uuid::Uuid>, Error> {
-        let result = sqlx::query!(
+    pub async fn resend_otp(&self, user_id: uuid::Uuid, code: &str) -> Result<(), Error> {
+        sqlx::query!(
+            // Expires in 5 min
             r#"
-                SELECT id FROM user_otps
-                WHERE user_id = $1
-                AND code = $2
-                AND expires_at > NOW()
-                LIMIT 1
+                INSERT INTO user_otps (user_id, code, expires_at)
+                VALUES ($1,$2, now() + interval '5 minutes')
             "#,
             user_id,
             code
         )
-        .fetch_optional(&self.pool)
+        .execute(&self.pool)
         .await?;
 
-        Ok(result.map(|r| r.id))
+        Ok(())
     }
 
     pub async fn active_user(&self, user_id: uuid::Uuid) -> Result<(), Error> {

@@ -5,10 +5,10 @@ use crate::{
     modules::{
         auth::{
             UserRepository,
-            dto::{RegisterRequest, VerifyEmailRequest},
+            dto::{RegisterRequest, ResendVerifyEmailRequest, VerifyEmailRequest},
             error::AuthError,
         },
-        user::model::User,
+        user::model::{User, UserStatus},
     },
     shared::{
         ports::mail::{EmailPayload, MailService},
@@ -97,16 +97,80 @@ impl AuthService {
             .await?
             .ok_or(AuthError::EmailVerificationFailed)?;
 
-        // Check OTP in DB
-        self.user_repo
-            .find_valid_otp(user.id, &req.token)
+        if user.status == UserStatus::Active {
+            return Ok("Tài khoản này đã được kích hoạt rồi".to_string());
+        }
+        let otp_record = self
+            .user_repo
+            .find_otp_record(user.id, &req.token)
             .await?
-            .ok_or(AuthError::EmailVerificationFailed)?;
+            .ok_or(AuthError::InvalidVerificationToken)?;
 
-        self.user_repo.active_user(user.id).await?;
+        if otp_record.expires_at < chrono::Utc::now() {
+            let _ = self.user_repo.delete_user_otps(user.id).await?;
+            return Err(AuthError::VerificationTokenExpired);
+        }
 
+        // If still valid and not expired -> Active account
+        let _ = self
+            .user_repo
+            .active_user(user.id)
+            .await
+            .map_err(|e| AuthError::DatabaseError(e));
+
+        // Clean verification token
         let _ = self.user_repo.delete_user_otps(user.id).await;
 
         Ok("Kích hoạt tài khoản thành công!".to_string())
+    }
+
+    pub async fn resend_verification_email(
+        &self,
+        req: ResendVerifyEmailRequest,
+    ) -> Result<String, AuthError> {
+        let user = self
+            .user_repo
+            .find_by_email(&req.email)
+            .await?
+            .ok_or(AuthError::UserAlreadyExists)?;
+
+        if user.status == UserStatus::Active {
+            return Ok("Tài khoản này vốn đã được kích hoạt".to_string());
+        }
+        let verification_token = uuid::Uuid::new_v4().to_string();
+
+        let _ = self.user_repo.save_otp(user.id, &verification_token);
+
+        let email_to_send = user.email.clone();
+        let name_to_send = user.name.clone();
+        let email_service_clone = self.email_service.clone();
+
+        let domain_url = self.config.domain_name.clone();
+        tokio::spawn(async move {
+            let link = format!(
+                "http://{}/verify?token={}&email={}",
+                domain_url, verification_token, email_to_send
+            );
+
+            let html_body = format!(
+                "<h3>Chào {}!</h3><p>Vui lòng bấm vào link dưới đây để kích hoạt tài khoản:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 15 phút.</p>",
+                name_to_send, link
+            );
+
+            let payload = EmailPayload {
+                to: vec![email_to_send],
+                subject: "Kích hoạt tài khoản".to_string(),
+                html_body,
+                text_body: None,
+                cc: None,
+                bcc: None,
+            };
+
+            if let Err(e) = email_service_clone.send_email(payload).await {
+                tracing::error!("Failed to send verification email (OTP DB): {:?}", e)
+            }
+        });
+
+        Ok("Đã gửi lại email xác thực tài khoản về tài khoản, vui lòng kiểm tra lại.".to_string())
     }
 }

@@ -17,7 +17,7 @@ pub enum UserRole {
 }
 
 // DB type: user_status_type
-#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(PartialEq, Debug, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "user_status_type", rename_all = "lowercase")]
 #[serde(rename_all = "snake_case")]
 pub enum UserStatus {
