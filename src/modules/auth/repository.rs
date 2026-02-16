@@ -96,22 +96,6 @@ impl UserRepository {
         Ok(())
     }
 
-    pub async fn resend_otp(&self, user_id: uuid::Uuid, code: &str) -> Result<(), Error> {
-        sqlx::query!(
-            // Expires in 5 min
-            r#"
-                INSERT INTO user_otps (user_id, code, expires_at)
-                VALUES ($1,$2, now() + interval '5 minutes')
-            "#,
-            user_id,
-            code
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn active_user(&self, user_id: uuid::Uuid) -> Result<(), Error> {
         sqlx::query!(
             r#"

@@ -13,4 +13,5 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/register", post(handler::register))
         .route("/verify", post(handler::verify))
+        .route("/verify/resend", post(handler::resend_verification_email))
 }

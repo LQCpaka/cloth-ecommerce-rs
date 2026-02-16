@@ -69,7 +69,7 @@ impl AuthService {
             );
 
             let html_body = format!(
-                "<h3>Chào {}!</h3><p>Vui lòng bấm vào link dưới đây để kích hoạt tài khoản:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 15 phút.</p>",
+                "<h3>Chào {}!</h3><p>Vui lòng bấm vào link dưới đây để kích hoạt tài khoản:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 5 phút.</p>",
                 name_to_send, link
             );
 
@@ -112,11 +112,10 @@ impl AuthService {
         }
 
         // If still valid and not expired -> Active account
-        let _ = self
-            .user_repo
+        self.user_repo
             .active_user(user.id)
             .await
-            .map_err(|e| AuthError::DatabaseError(e));
+            .map_err(|e| AuthError::DatabaseError(e))?;
 
         // Clean verification token
         let _ = self.user_repo.delete_user_otps(user.id).await;
@@ -132,14 +131,19 @@ impl AuthService {
             .user_repo
             .find_by_email(&req.email)
             .await?
-            .ok_or(AuthError::UserAlreadyExists)?;
+            .ok_or(AuthError::UserNotFound)?;
 
         if user.status == UserStatus::Active {
             return Ok("Tài khoản này vốn đã được kích hoạt".to_string());
         }
+
+        let _ = self.user_repo.delete_user_otps(user.id).await;
         let verification_token = uuid::Uuid::new_v4().to_string();
 
-        let _ = self.user_repo.save_otp(user.id, &verification_token);
+        self.user_repo
+            .save_otp(user.id, &verification_token)
+            .await
+            .map_err(|e| AuthError::DatabaseError(e))?;
 
         let email_to_send = user.email.clone();
         let name_to_send = user.name.clone();
@@ -153,7 +157,7 @@ impl AuthService {
             );
 
             let html_body = format!(
-                "<h3>Chào {}!</h3><p>Vui lòng bấm vào link dưới đây để kích hoạt tài khoản:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 15 phút.</p>",
+                "<h3>Chào {}!</h3><p>Đây là link kích hoạt mới của bạn:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 5 phút.</p>",
                 name_to_send, link
             );
 

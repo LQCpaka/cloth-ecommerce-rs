@@ -4,8 +4,7 @@ use validator::Validate;
 
 use crate::app_state::AppState;
 use crate::error::{AppError, ErrorResponse};
-use crate::modules::auth::dto::{RegisterRequest, VerifyEmailRequest};
-use crate::modules::auth::error::AuthError;
+use crate::modules::auth::dto::{RegisterRequest, ResendVerifyEmailRequest, VerifyEmailRequest};
 use crate::modules::auth::repository::UserRepository;
 use crate::modules::auth::service::AuthService;
 use crate::shared::utils::flattern_error::flatten_errors;
@@ -72,6 +71,38 @@ pub async fn verify(
         StatusCode::OK,
         Json(serde_json::json!({
             "status" : "success",
+            "message": message
+        })),
+    )
+        .into_response())
+}
+
+// API: [POST] - api/auth/verify/resend
+pub async fn resend_verification_email(
+    State(state): State<AppState>,
+    Json(payload): Json<ResendVerifyEmailRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    //Validate input
+    if let Err(e) = payload.validate() {
+        let clean_errors = flatten_errors(e);
+        let response = ErrorResponse {
+            error: "Validation Failed".to_string(),
+            details: Some("Dữ liệu xác thực không hợp lệ".to_string()),
+            fields: Some(clean_errors),
+        };
+        return Ok((StatusCode::BAD_REQUEST, Json(response)).into_response());
+    }
+
+    let user_repo = Arc::new(UserRepository::new(state.db.clone()));
+
+    let auth_service =
+        AuthService::new(user_repo, state.mail_service.clone(), state.config.clone());
+
+    let message = auth_service.resend_verification_email(payload).await?;
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "success",
             "message": message
         })),
     )
