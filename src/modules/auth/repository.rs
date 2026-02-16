@@ -91,28 +91,48 @@ impl UserRepository {
         Ok(())
     }
 
-    pub async fn login_user(&self, email: String, password_hash: String) -> Result<User, Error> {
-        let user = sqlx::query_as!(
-            User,
+    pub async fn find_valid_otp(
+        &self,
+        user_id: uuid::Uuid,
+        code: &str,
+    ) -> Result<Option<uuid::Uuid>, Error> {
+        let result = sqlx::query!(
             r#"
-                SELECT
-                id,
-                        name,
-                        email,
-                        password_hash,
-                        role as "role: UserRole", -- Nếu role cũng là enum thì ép kiểu thế này
-                        provider as "provider: AuthProvider", -- 👈 ÉP KIỂU Ở ĐÂY NÈ VỢ
-                        created_at,
-                        updated_at
-                FROM users
-                WHERE users.email = $1
-                AND users.password_hash = $2
+                SELECT id FROM user_otps
+                WHERE user_id = $1
+                AND code = $2
+                AND expires_at > NOW()
+                LIMIT 1
             "#,
-            email,
-            password_hash
+            user_id,
+            code
         )
         .fetch_optional(&self.pool)
         .await?;
-        Ok(user)
+
+        Ok(result.map(|r| r.id))
+    }
+
+    pub async fn active_user(&self, user_id: uuid::Uuid) -> Result<(), Error> {
+        sqlx::query!(
+            r#"
+                UPDATE users
+                SET status = 'active'::user_status_type, updated_at = NOW()
+                WHERE id = $1
+            "#,
+            user_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_user_otps(&self, user_id: uuid::Uuid) -> Result<(), Error> {
+        sqlx::query!(r#"DELETE FROM user_otps WHERE user_id = $1"#, user_id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
     }
 }
