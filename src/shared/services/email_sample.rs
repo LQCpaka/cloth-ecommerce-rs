@@ -75,7 +75,38 @@ pub async fn rensend_verification_email(email_config: EmailConfig) {
         );
 
         let html_body = format!(
-            "<h3>Chào {}!</h3><p>Đây là link kích hoạt mới của bạn:</p><a href=\"{}\">Kích hoạt ngay</a><p>Link hết hạn sau 5 phút.</p>",
+            r#"<!DOCTYPE html>
+            <html>
+                <body style="margin:0; padding:0; font-family:Arial, sans-serif;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4; padding:20px;">
+                    <tr>
+                    <td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+                        <tr>
+                            <td style="padding:20px; text-align:center; background:#808080 ; color:#fff;">
+                            <h2>Chào {}!</h2>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:20px; color:#333;">
+                            <h2 style="text-align:center;">Đây là email kích hoạt tài khoản mới của bạn:</h2>
+                            <p style="text-align:center;">
+                                <a href="{}"
+                                    style="display:inline-block; background:#808080 ; color:#fff; padding:12px 24px; text-decoration:none; border-radius:4px;">
+                                    Kích hoạt ngay
+                                </a>
+                            </p>
+                            <p style="font-size:12px; color:#777;text-align:center;">Vui lòng không xóa email này nếu bạn chưa hoàn tất việc xác thực tài khoản.</p>
+                            <p style="font-size:12px; color:#777;text-align:center;">Link hết hạn sau 5 phút.</p>
+                            </td>
+                        </tr>
+                        </table>
+                    </td>
+                    </tr>
+                </table>
+                </body>
+            </html>
+            "#,
             email_config.name_to_send, link
         );
 
