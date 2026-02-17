@@ -5,122 +5,76 @@ use crate::shared::ports::mail::{EmailPayload, MailService};
 pub struct EmailConfig {
     pub email_to_send: String,
     pub name_to_send: String,
-    pub email_service_clone: Arc<dyn MailService>,
+    pub email_service: Arc<dyn MailService>,
     pub domain_url: String,
     pub verification_token: String,
 }
 
-pub async fn verification_email(email_config: EmailConfig) {
+// 1. First send email (Register)
+pub fn send_register_verification(config: EmailConfig) {
     tokio::spawn(async move {
-        let link = format!(
-            "http://{}/verify?token={}&email={}",
-            email_config.domain_url, email_config.verification_token, email_config.email_to_send
-        );
-
-        let html_body = format!(
-            r#"<!DOCTYPE html>
-            <html>
-              <body style="margin:0; padding:0; font-family:Arial, sans-serif;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4; padding:20px;">
-                  <tr>
-                    <td align="center">
-                      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
-                        <tr>
-                          <td style="padding:20px; text-align:center; background:#808080 ; color:#fff;">
-                            <h2>Chào {}!</h2>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:20px; color:#333;">
-                            <h2 style="text-align:center;">Đây là email kích hoạt tài khoản của bạn:</h2>
-                            <p style="text-align:center;">
-                              <a href="{}"
-                                 style="display:inline-block; background:#808080 ; color:#fff; padding:12px 24px; text-decoration:none; border-radius:4px;">
-                                 Kích hoạt ngay
-                              </a>
-                            </p>
-                            <p style="font-size:12px; color:#777;text-align:center;">Link hết hạn sau 5 phút.</p>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-              </body>
-            </html>
-            "#,
-            email_config.name_to_send, link
-        );
-
-        let payload = EmailPayload {
-            to: vec![email_config.email_to_send],
-            subject: "Kích hoạt tài khoản".to_string(),
-            html_body,
-            text_body: None,
-            cc: None,
-            bcc: None,
-        };
-
-        if let Err(e) = email_config.email_service_clone.send_email(payload).await {
-            tracing::error!("Failed to send verification email (OTP DB): {:?}", e)
-        }
+        send_verification_logic(
+            config,
+            "Kích hoạt tài khoản".to_string(),
+            "Chào mừng bạn! Đây là link kích hoạt tài khoản:".to_string(),
+        )
+        .await;
     });
 }
 
-pub async fn resend_verification_email(email_config: EmailConfig) {
+// 2. Second send email (Resend)
+pub fn send_resend_verification(config: EmailConfig) {
     tokio::spawn(async move {
-        let link = format!(
-            "http://{}/verify?token={}&email={}",
-            email_config.domain_url, email_config.verification_token, email_config.email_to_send
-        );
-
-        let html_body = format!(
-            r#"<!DOCTYPE html>
-            <html>
-                <body style="margin:0; padding:0; font-family:Arial, sans-serif;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4; padding:20px;">
-                    <tr>
-                    <td align="center">
-                        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
-                        <tr>
-                            <td style="padding:20px; text-align:center; background:#808080 ; color:#fff;">
-                            <h2>Chào {}!</h2>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding:20px; color:#333;">
-                            <h2 style="text-align:center;">Đây là email kích hoạt tài khoản mới của bạn:</h2>
-                            <p style="text-align:center;">
-                                <a href="{}"
-                                    style="display:inline-block; background:#808080 ; color:#fff; padding:12px 24px; text-decoration:none; border-radius:4px;">
-                                    Kích hoạt ngay
-                                </a>
-                            </p>
-                            <p style="font-size:12px; color:#777;text-align:center;">Vui lòng không xóa email này nếu bạn chưa hoàn tất việc xác thực tài khoản.</p>
-                            <p style="font-size:12px; color:#777;text-align:center;">Link hết hạn sau 5 phút.</p>
-                            </td>
-                        </tr>
-                        </table>
-                    </td>
-                    </tr>
-                </table>
-                </body>
-            </html>
-            "#,
-            email_config.name_to_send, link
-        );
-
-        let payload = EmailPayload {
-            to: vec![email_config.email_to_send],
-            subject: "Kích hoạt tài khoản".to_string(),
-            html_body,
-            text_body: None,
-            cc: None,
-            bcc: None,
-        };
-
-        if let Err(e) = email_config.email_service_clone.send_email(payload).await {
-            tracing::error!("Failed to send verification email (OTP DB): {:?}", e)
-        }
+        send_verification_logic(
+            config,
+            "Gửi lại mã kích hoạt".to_string(),
+            "Bạn vừa yêu cầu gửi lại email kích hoạt:".to_string(),
+        )
+        .await;
     });
+}
+fn generate_verification_html(name: &str, link: &str, intro_text: &str) -> String {
+    format!(
+        r#"<!DOCTYPE html>
+            <html>
+              <body style="margin:0; padding:0; font-family:Arial, sans-serif;">
+                <div style="background:#f4f4f4; padding:20px;">
+                  <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:8px; overflow:hidden;">
+                    <div style="padding:20px; text-align:center; background:#808080; color:#fff;">
+                      <h2>Chào {}!</h2>
+                    </div>
+                    <div style="padding:20px; color:#333; text-align:center;">
+                      <h2>{}</h2>
+                      <p><a href="{}" style="display:inline-block; background:#808080; color:#fff; padding:12px 24px; text-decoration:none; border-radius:4px;">Kích hoạt ngay</a></p>
+                      <p style="font-size:12px; color:#777;">Link hết hạn sau 15 phút. Vui lòng không chia sẻ link này.</p>
+                    </div>
+                  </div>
+                </div>
+              </body>
+            </html>"#,
+        name, intro_text, link
+    )
+}
+
+// Send email logic
+async fn send_verification_logic(config: EmailConfig, subject: String, intro_text: String) {
+    let link = format!(
+        "http://{}/verify?token={}&email={}",
+        config.domain_url, config.verification_token, config.email_to_send
+    );
+
+    let html_body = generate_verification_html(&config.name_to_send, &link, &intro_text);
+
+    let payload = EmailPayload {
+        to: vec![config.email_to_send.clone()],
+        subject,
+        html_body,
+        text_body: None,
+        cc: None,
+        bcc: None,
+    };
+
+    if let Err(e) = config.email_service.send_email(payload).await {
+        tracing::error!("Failed to send email: {:?}", e);
+    }
 }

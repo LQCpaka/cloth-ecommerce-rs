@@ -14,7 +14,7 @@ use crate::{
         ports::mail::MailService,
         services::{
             PasswordService,
-            email_sample::{EmailConfig, rensend_verification_email, verification_email},
+            email_sample::{EmailConfig, send_register_verification, send_resend_verification},
         },
     },
 };
@@ -66,14 +66,13 @@ impl AuthService {
 
         let domain_url = self.config.domain_name.clone();
 
-        verification_email(EmailConfig {
+        send_register_verification(EmailConfig {
             email_to_send: email_to_send.clone(),
             name_to_send: name_to_send.clone(),
-            email_service_clone: email_service_clone.clone(),
+            email_service: email_service_clone.clone(),
             domain_url: domain_url.clone(),
             verification_token: verification_token,
-        })
-        .await;
+        });
 
         Ok(new_user)
     }
@@ -134,14 +133,13 @@ impl AuthService {
             .await
             .map_err(|e| AuthError::DatabaseError(e))?;
 
-        rensend_verification_email(EmailConfig {
+        send_resend_verification(EmailConfig {
             email_to_send: user.email.clone(),
             name_to_send: user.name.clone(),
-            email_service_clone: self.email_service.clone(),
+            email_service: self.email_service.clone(),
             domain_url: self.config.domain_name.clone(),
             verification_token: verification_token,
-        })
-        .await;
+        });
 
         Ok("Đã gửi lại email xác thực tài khoản về tài khoản, vui lòng kiểm tra lại.".to_string())
     }
