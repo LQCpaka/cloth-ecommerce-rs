@@ -139,4 +139,27 @@ impl UserRepository {
 
         Ok(result)
     }
+
+    pub async fn create_session(
+        &self,
+        user_id: uuid::Uuid,
+        refresh_token: &str,
+        user_agent: &str,
+        expires_in_day: i32,
+    ) -> Result<(), Error> {
+        sqlx::query!(
+            r#"
+                INSERT INTO user_sessions (user_id, refresh_token, user_agent, expires_at)
+                VALUES ($1, $2, $3, NOW() + make_interval(days => $4))
+            "#,
+            user_id,
+            refresh_token,
+            user_agent,
+            expires_in_day
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
 }
