@@ -67,7 +67,7 @@ pub async fn verification_email(email_config: EmailConfig) {
     });
 }
 
-pub async fn rensend_verification_email(email_config: EmailConfig) {
+pub async fn resend_verification_email(email_config: EmailConfig) {
     tokio::spawn(async move {
         let link = format!(
             "http://{}/verify?token={}&email={}",
