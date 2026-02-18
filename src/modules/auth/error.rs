@@ -1,7 +1,7 @@
-// modules/auth/error.rs
 use crate::error::AppError;
 use thiserror::Error;
 
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum AuthError {
     #[error("User already exists")]
@@ -9,6 +9,9 @@ pub enum AuthError {
 
     #[error("User not found")]
     UserNotFound,
+
+    #[error("Login failed")]
+    AuthorizationFailed,
 
     #[error("Invalid token")]
     InvalidToken,
@@ -43,62 +46,73 @@ pub enum AuthError {
     #[error("Email already verified")]
     EmailAlreadyVerified,
 
-    #[error("Invalid Token")]
+    #[error("Invalid verification token")]
     InvalidVerificationToken,
 
-    #[error("Token is expired")]
+    #[error("Verification token expired")]
     VerificationTokenExpired,
 
     #[error("Database error: {0}")]
     DatabaseError(#[from] sqlx::Error),
 }
 
-// Convert AuthError -> AppError
 impl From<AuthError> for AppError {
     fn from(err: AuthError) -> Self {
+        let msg = err.to_string(); // lấy trước khi move
         match err {
-            // Simple conversions - dùng err.to_string()
-            AuthError::UserAlreadyExists => AppError::Conflict(err.to_string()),
-            AuthError::UserNotFound => AppError::NotFound(err.to_string()),
-            AuthError::InvalidToken | AuthError::TokenExpired | AuthError::InvalidRefreshToken => {
-                AppError::Unauthorized(err.to_string())
+            // User enumeration protection:
+            // Gộp UserNotFound + AuthorizationFailed thành một message chung
+            // tránh attacker biết email nào đã đăng ký
+            AuthError::UserNotFound | AuthError::AuthorizationFailed => {
+                AppError::InvalidCredentials("Invalid email or password".to_string())
             }
-            AuthError::EmailNotVerified => AppError::Forbidden(err.to_string()),
+
+            // Registration
+            AuthError::UserAlreadyExists => AppError::Conflict(msg),
+
+            // Token errors
+            AuthError::InvalidToken | AuthError::TokenExpired | AuthError::InvalidRefreshToken => {
+                AppError::Unauthorized(msg)
+            }
+
+            // Session
+            AuthError::SessionExpired => AppError::Unauthorized(msg),
+
+            // Access control
+            AuthError::EmailNotVerified => AppError::Forbidden(msg),
 
             // Rate limiting / Security
-            AuthError::AccountLocked | AuthError::TooManyAttempts => {
-                AppError::Forbidden(err.to_string())
+            AuthError::AccountLocked | AuthError::TooManyAttempts => AppError::Forbidden(msg),
+
+            // Email verification
+            AuthError::EmailVerificationFailed => AppError::BadRequest(msg),
+            AuthError::EmailAlreadyVerified => AppError::Conflict(msg),
+            AuthError::VerificationTokenExpired => {
+                AppError::BadRequest("Verification code has expired".to_string())
+            }
+            AuthError::InvalidVerificationToken => {
+                AppError::BadRequest("Invalid verification code".to_string())
             }
 
-            AuthError::SessionExpired => AppError::Unauthorized(err.to_string()),
-
-            // Email verification issues
-            AuthError::EmailVerificationFailed => AppError::BadRequest(err.to_string()),
-            AuthError::EmailAlreadyVerified => AppError::Conflict(err.to_string()),
-
-            // Custom handling - che giấu sensitive info
+            // Validation
             AuthError::WeakPassword { reason } => {
                 tracing::warn!("Weak password rejected: {}", reason);
                 AppError::Validation(
-                    "Password must be at least 6 characters and contain numbers".to_string(),
+                    "Password must be at least 8 characters and contain letters and numbers"
+                        .to_string(),
                 )
             }
 
-            AuthError::SecurityError(msg) => {
-                tracing::error!("Auth Security Error: {}", msg);
+            // Security - log đầy đủ nhưng không trả details ra ngoài
+            AuthError::SecurityError(inner) => {
+                tracing::error!("Auth security error: {}", inner);
                 AppError::Internal
             }
 
+            // Database - log đầy đủ, AppError::Database sẽ ẩn details khi trả về client
             AuthError::DatabaseError(e) => {
-                tracing::error!("Auth Database Error: {:?}", e);
+                tracing::error!("Auth database error: {:?}", e);
                 AppError::Database(e)
-            }
-
-            AuthError::VerificationTokenExpired => {
-                AppError::BadRequest("Mã xác thực đã hết hạn".to_string())
-            }
-            AuthError::InvalidVerificationToken => {
-                AppError::BadRequest("Mã xác thực không đúng".to_string())
             }
         }
     }

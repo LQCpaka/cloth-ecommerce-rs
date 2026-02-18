@@ -8,23 +8,25 @@ use std::{env, str::FromStr};
 pub struct Config {
     //db config env
     pub database_url: String,
-    //domain - host config
+    //domain - host env
     pub server_host: String,
     pub server_port: u16,
     pub domain_name: String,
     // Resend env
     pub resend_api_key: String,
     pub from_email: String,
+    //jwt env
+    pub jwt_secret: String,
+    pub jwt_expired_in: i64,
 }
 
 impl Config {
     fn get_env(key: &str) -> Result<String, ConfigError> {
         // Take value if not -> return empty string
-        let val = env::var(key).unwrap_or_default();
-        if val.trim().is_empty() {
-            Err(ConfigError::MissingEnvVar(key.to_string()))
-        } else {
-            Ok(val)
+        match env::var(key) {
+            Ok(val) if !val.trim().is_empty() => Ok(val),
+            Ok(_) => Err(ConfigError::MissingEnvVar(key.to_string())),
+            Err(_) => Err(ConfigError::MissingEnvVar(key.to_string())),
         }
     }
 
@@ -40,26 +42,19 @@ impl Config {
     pub fn init() -> Result<Config, ConfigError> {
         dotenv().ok();
 
-        // DB struct - Config Env
-        let database_url = Self::get_env("DATABASE_URL")
-            .map_err(|_| ConfigError::MissingEnvVar("DATABASE_URL".to_string()))?;
-        let server_host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-        let server_port = env::var("PORT")
-            .unwrap_or_else(|_| "3000".to_string())
-            .parse::<u16>()?;
-        let domain_name = Self::get_env("DOMAIN_NAME")?;
-        // Email struct - Config Env
-        let resend_api_key = Self::get_env("RESEND_API_KEY")?;
-
-        let from_email = Self::get_email_env("FROM_EMAIL")?;
-
         Ok(Config {
-            database_url,
-            server_host,
-            server_port,
-            domain_name,
-            resend_api_key,
-            from_email,
+            database_url: Self::get_env("DATABASE_URL")?,
+            server_host: env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
+            server_port: Self::get_env("PORT")?
+                .parse::<u16>()
+                .map_err(|e| ConfigError::InvalidNumber("PORT".into(), e.to_string()))?,
+            domain_name: Self::get_env("DOMAIN_NAME")?,
+            resend_api_key: Self::get_env("RESEND_API_KEY")?,
+            from_email: Self::get_email_env("FROM_EMAIL")?,
+            jwt_secret: Self::get_env("JWT_SECRET")?,
+            jwt_expired_in: Self::get_env("JWT_EXPIRED_IN")?
+                .parse::<i64>()
+                .map_err(|e| ConfigError::InvalidNumber("JWT_EXPIRED_IN".into(), e.to_string()))?,
         })
     }
 }

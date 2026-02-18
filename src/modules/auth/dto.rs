@@ -19,7 +19,7 @@ pub struct RegisterRequest {
 }
 
 #[derive(Deserialize, Serialize, Validate)]
-pub struct Login {
+pub struct LoginRequest {
     #[validate(email(message = "Email không hợp lệ"))]
     pub email: String,
 
@@ -44,6 +44,8 @@ pub struct ResendVerifyEmailRequest {
     #[validate(email(message = "Email không hợp lệ"))]
     pub email: String,
 }
+
+//Helper func
 fn validate_password(password: &str) -> Result<(), ValidationError> {
     let has_letter = password.chars().any(|c| c.is_ascii_alphabetic());
     let has_digit = password.chars().any(|c| c.is_ascii_digit());

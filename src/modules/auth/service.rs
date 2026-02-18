@@ -5,7 +5,7 @@ use crate::{
     modules::{
         auth::{
             UserRepository,
-            dto::{RegisterRequest, ResendVerifyEmailRequest, VerifyEmailRequest},
+            dto::{LoginRequest, RegisterRequest, ResendVerifyEmailRequest, VerifyEmailRequest},
             error::AuthError,
         },
         user::model::{User, UserStatus},
@@ -15,13 +15,20 @@ use crate::{
         services::{
             PasswordService,
             email_sample::{EmailConfig, send_register_verification, send_resend_verification},
+            jwt::TokenService,
         },
     },
 };
 
+pub struct TokenPair {
+    pub access_token: String,
+    pub refresh_token: String,
+}
+
 pub struct AuthService {
     user_repo: Arc<UserRepository>,
     email_service: Arc<dyn MailService>,
+    token_service: Arc<TokenService>,
     config: Arc<Config>,
 }
 
@@ -29,11 +36,13 @@ impl AuthService {
     pub fn new(
         user_repo: Arc<UserRepository>,
         email_service: Arc<dyn MailService>,
+        token_service: Arc<TokenService>,
         config: Arc<Config>,
     ) -> Self {
         Self {
             user_repo,
             email_service,
+            token_service,
             config,
         }
     }
@@ -142,5 +151,58 @@ impl AuthService {
         });
 
         Ok("Đã gửi lại email xác thực tài khoản về tài khoản, vui lòng kiểm tra lại.".to_string())
+    }
+
+    pub async fn login(
+        &self,
+        req: LoginRequest,
+        user_agent: String,
+    ) -> Result<TokenPair, AuthError> {
+        // Find user
+        let user = self
+            .user_repo
+            .find_by_email(&req.email)
+            .await?
+            .ok_or(AuthError::AuthorizationFailed)?;
+
+        let db_passwordhash = user
+            .password_hash
+            .as_ref()
+            .ok_or(AuthError::AuthorizationFailed)?;
+        // Password validate
+        let is_valid = PasswordService::verify_password(&req.password, db_passwordhash)
+            .map_err(|_| AuthError::AuthorizationFailed)?;
+
+        if !is_valid {
+            return Err(AuthError::UserNotFound);
+        }
+        if user.status == UserStatus::Unverified {
+            return Err(AuthError::EmailNotVerified);
+        }
+        if user.status == UserStatus::Banned {
+            return Err(AuthError::AccountLocked);
+        }
+
+        let access_token = self
+            .token_service
+            .generate_access_token(
+                user.id,
+                format!("{:?}", user.role),
+                format!("{:?}", user.email),
+            )
+            .map_err(|e| AuthError::SecurityError(e.to_string()))?;
+
+        // 5. Tạo Refresh Token (Thẻ căn cước) - Sống dài
+        let refresh_token = self.token_service.generate_refresh_token();
+
+        self.user_repo
+            .create_session(user.id, &refresh_token, &user_agent, 7)
+            .await
+            .map_err(AuthError::DatabaseError)?;
+
+        Ok(TokenPair {
+            access_token,
+            refresh_token,
+        })
     }
 }

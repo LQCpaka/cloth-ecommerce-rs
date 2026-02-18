@@ -1,3 +1,4 @@
+use axum::http::HeaderMap;
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use std::sync::Arc;
 use validator::Validate;
@@ -19,6 +20,7 @@ pub async fn register(
         let clean_errors = flatten_errors(e);
         let response = ErrorResponse {
             error: "Validation Failed".to_string(),
+            code: "VALIDATION_FAILED".to_string(),
             details: Some("Dữ liệu đầu vào không hợp lệ".to_string()),
             fields: Some(clean_errors),
         };
@@ -29,10 +31,13 @@ pub async fn register(
     // 2. Dependency Injection (Thủ công)
     // Khởi tạo Repo và Service, truyền các phụ tùng từ AppState vào
     let user_repo = Arc::new(UserRepository::new(state.db.clone()));
-
     // state.email_service đã là Arc<dyn MailService> rồi, truyền thẳng vào luôn
-    let auth_service =
-        AuthService::new(user_repo, state.mail_service.clone(), state.config.clone());
+    let auth_service = AuthService::new(
+        user_repo,
+        state.mail_service.clone(),
+        state.token_service.clone(),
+        state.config.clone(),
+    );
 
     // 3. Gọi Business Logic
     // Dấu `?` ở đây sẽ làm 2 việc:
@@ -54,6 +59,7 @@ pub async fn verify(
         let clean_errors = flatten_errors(e);
         let response = ErrorResponse {
             error: "Validation Failed".to_string(),
+            code: "VALIDATION_FAILED".to_string(),
             details: Some("Dữ liệu xác thực không hợp lệ".to_string()),
             fields: Some(clean_errors),
         };
@@ -62,8 +68,12 @@ pub async fn verify(
 
     let user_repo = Arc::new(UserRepository::new(state.db.clone()));
 
-    let auth_service =
-        AuthService::new(user_repo, state.mail_service.clone(), state.config.clone());
+    let auth_service = AuthService::new(
+        user_repo,
+        state.mail_service.clone(),
+        state.token_service.clone(),
+        state.config.clone(),
+    );
 
     let message = auth_service.verify_account(payload).await?;
 
@@ -87,6 +97,7 @@ pub async fn resend_verification_email(
         let clean_errors = flatten_errors(e);
         let response = ErrorResponse {
             error: "Validation Failed".to_string(),
+            code: "VALIDATION_FAILED".to_string(),
             details: Some("Dữ liệu xác thực không hợp lệ".to_string()),
             fields: Some(clean_errors),
         };
@@ -95,8 +106,12 @@ pub async fn resend_verification_email(
 
     let user_repo = Arc::new(UserRepository::new(state.db.clone()));
 
-    let auth_service =
-        AuthService::new(user_repo, state.mail_service.clone(), state.config.clone());
+    let auth_service = AuthService::new(
+        user_repo,
+        state.mail_service.clone(),
+        state.token_service.clone(),
+        state.config.clone(),
+    );
 
     let message = auth_service.resend_verification_email(payload).await?;
     Ok((
