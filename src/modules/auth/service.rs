@@ -169,13 +169,14 @@ impl AuthService {
             .password_hash
             .as_ref()
             .ok_or(AuthError::AuthorizationFailed)?;
+
         // Password validate
         let is_valid = PasswordService::verify_password(&req.password, db_passwordhash)
             .map_err(|_| AuthError::AuthorizationFailed)?;
-
         if !is_valid {
             return Err(AuthError::UserNotFound);
         }
+
         if user.status == UserStatus::Unverified {
             return Err(AuthError::EmailNotVerified);
         }

@@ -5,7 +5,9 @@ use validator::Validate;
 
 use crate::app_state::AppState;
 use crate::error::{AppError, ErrorResponse};
-use crate::modules::auth::dto::{RegisterRequest, ResendVerifyEmailRequest, VerifyEmailRequest};
+use crate::modules::auth::dto::{
+    LoginRequest, RegisterRequest, ResendVerifyEmailRequest, VerifyEmailRequest,
+};
 use crate::modules::auth::repository::UserRepository;
 use crate::modules::auth::service::AuthService;
 use crate::shared::utils::flattern_error::flatten_errors;
@@ -122,4 +124,44 @@ pub async fn resend_verification_email(
         })),
     )
         .into_response())
+}
+
+// API: [POST] - api/auth/login
+pub async fn login(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(payload): Json<LoginRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    // validate
+    if let Err(e) = payload.validate() {
+        let clean_errors = flatten_errors(e);
+        return Err(AppError::validation_fields(clean_errors));
+    }
+
+    // user-agent from header - (to know which browser people use)
+    let user_agent = headers
+        .get("User-Agent")
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("Unkown")
+        .to_string();
+
+    let user_repo = Arc::new(UserRepository::new(state.db.clone()));
+    let auth_service = AuthService::new(
+        user_repo,
+        state.mail_service.clone(),
+        state.token_service.clone(),
+        state.config.clone(),
+    );
+
+    let token_pair = auth_service.login(payload, user_agent).await?;
+
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "data": {
+            "access_token": token_pair.access_token,
+            "refresh_token": token_pair.refresh_token,
+            "token_type": "Bearer",
+            "expires_in": state.config.jwt_expired_in
+        }
+    })))
 }
