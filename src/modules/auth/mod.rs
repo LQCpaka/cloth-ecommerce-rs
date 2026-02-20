@@ -1,5 +1,6 @@
 pub mod dto;
 pub mod error;
+pub mod guard;
 pub mod handler;
 pub mod repository;
 pub mod service;
