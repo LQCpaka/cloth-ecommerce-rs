@@ -11,7 +11,7 @@
 </div>
 
 ## ❓ ABOUT PROJECT
-* This is Cloth Ecommerce, **REST-API** written in RUST. I was planning to write it with Golang, but after considering all the case, I decided to implement with **Rust - Axum**. The project using Axum, which is built on top Tokio, and use **Tower** or building robust networking clients and servers. Using Modular + Layered Architecture to implement medium scale for small team or even solo dev. <br/>
+* This is Cloth Ecommerce, **REST-API** written in **Rust**. I was planning to write it with Golang, but after considering all the case, I decided to implement with **Rust - Axum**. The project using Axum, which is built on top Tokio, and use **Tower** or building robust networking clients and servers. Using Modular + Layered Architecture to implement medium scale for small team or even solo dev. <br/>
 
 * Cloth Ecommerce is for optimizing memory consuming. That's why I'm not gonna use C#, Java or even a Golang for this project, just because of GC (Garbage Collector). Amd good scaling but also not overengineering, without microservice, only mono repo. I challenge myself with a brandnew and hard development framework (actix harder, I know), to learn how a programming language that not use GC, to see how far I can go.
 
