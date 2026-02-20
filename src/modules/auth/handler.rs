@@ -155,13 +155,16 @@ pub async fn login(
 
     let token_pair = auth_service.login(payload, user_agent).await?;
 
+    let expires_in_minutes: u64 = state.config.jwt_expired_in.parse().unwrap_or(60);
+    let expires_in_seconds = expires_in_minutes * 60;
+
     Ok(Json(serde_json::json!({
         "status": "success",
         "data": {
             "access_token": token_pair.access_token,
             "refresh_token": token_pair.refresh_token,
             "token_type": "Bearer",
-            "expires_in": state.config.jwt_expired_in
+            "expires_in": expires_in_seconds
         }
     })))
 }

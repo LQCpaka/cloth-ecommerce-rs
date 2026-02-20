@@ -158,7 +158,7 @@ impl AuthService {
         req: LoginRequest,
         user_agent: String,
     ) -> Result<TokenPair, AuthError> {
-        // Find user
+        // 1. Find user
         let user = self
             .user_repo
             .find_by_email(&req.email)
@@ -170,11 +170,12 @@ impl AuthService {
             .as_ref()
             .ok_or(AuthError::AuthorizationFailed)?;
 
-        // Password validate
+        // 2. Password validate
         let is_valid = PasswordService::verify_password(&req.password, db_passwordhash)
             .map_err(|_| AuthError::AuthorizationFailed)?;
+
         if !is_valid {
-            return Err(AuthError::UserNotFound);
+            return Err(AuthError::AuthorizationFailed);
         }
 
         if user.status == UserStatus::Unverified {
@@ -184,20 +185,23 @@ impl AuthService {
             return Err(AuthError::AccountLocked);
         }
 
+        // 3. Generate Access Token
         let access_token = self
             .token_service
-            .generate_access_token(
-                user.id,
-                format!("{:?}", user.role),
-                format!("{:?}", user.email),
-            )
+            .generate_access_token(user.id, format!("{:?}", user.role), user.email)
             .map_err(|e| AuthError::SecurityError(e.to_string()))?;
 
-        // 5. Tạo Refresh Token (Thẻ căn cước) - Sống dài
+        // 4. Generate Refresh Token
         let refresh_token = self.token_service.generate_refresh_token();
 
+        // 5. Lưu Session
         self.user_repo
-            .create_session(user.id, &refresh_token, &user_agent, 7)
+            .create_session(
+                user.id,
+                &refresh_token,
+                &user_agent,
+                self.config.refresh_token_expired_in,
+            )
             .await
             .map_err(AuthError::DatabaseError)?;
 

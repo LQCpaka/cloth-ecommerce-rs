@@ -18,6 +18,7 @@ pub struct Config {
     //jwt env
     pub jwt_secret: String,
     pub jwt_expired_in: i64,
+    pub refresh_token_expired_in: i32,
 }
 
 impl Config {
@@ -55,6 +56,11 @@ impl Config {
             jwt_expired_in: Self::get_env("JWT_EXPIRED_IN")?
                 .parse::<i64>()
                 .map_err(|e| ConfigError::InvalidNumber("JWT_EXPIRED_IN".into(), e.to_string()))?,
+            refresh_token_expired_in: Self::get_env("REFRESH_TOKEN_EXPIRED_IN")?
+                .parse::<i32>()
+                .map_err(|e| {
+                    ConfigError::InvalidNumber("REFRESH_TOKEN_EXPIRED_IN".into(), e.to_string())
+                })?,
         })
     }
 }
