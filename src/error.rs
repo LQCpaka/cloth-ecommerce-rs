@@ -83,6 +83,9 @@ pub enum AppError {
 
     #[error("Service unavailable")]
     ServiceUnavailable,
+
+    #[error("Too many request: {0}")]
+    TooManyRequest(String),
 }
 
 impl AppError {
@@ -181,6 +184,8 @@ impl IntoResponse for AppError {
                     None,
                 )
             }
+
+            // Redis
             AppError::Redis(ref msg) => {
                 tracing::error!("Redis error: {}", msg);
                 (
@@ -190,6 +195,13 @@ impl IntoResponse for AppError {
                     None,
                 )
             }
+
+            AppError::TooManyRequest(msg) => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "Too many Reuqest",
+                "RATE_LIMIT_EXCEEDED",
+                Some(msg),
+            ),
 
             // Database errors - log internally, không leak gì ra ngoài
             AppError::Database(ref e) => {
