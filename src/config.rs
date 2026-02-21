@@ -8,6 +8,8 @@ use std::{env, str::FromStr};
 pub struct Config {
     //db config env
     pub database_url: String,
+    //redis
+    pub redis_url: String,
     //domain - host env
     pub server_host: String,
     pub server_port: u16,
@@ -45,6 +47,7 @@ impl Config {
 
         Ok(Config {
             database_url: Self::get_env("DATABASE_URL")?,
+            redis_url: Self::get_env("REDIS_URl")?,
             server_host: env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
             server_port: Self::get_env("PORT")?
                 .parse::<u16>()
