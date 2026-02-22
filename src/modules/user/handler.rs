@@ -53,7 +53,9 @@ pub async fn get_my_profile(
     };
 
     if let Ok(json_string) = serde_json::to_string(&profile_response) {
-        let _ = redis_service.set(&cache_key, json_string, Duration::from_secs(900));
+        let _ = redis_service
+            .set(&cache_key, json_string, Duration::from_secs(900))
+            .await;
     };
 
     Ok((
