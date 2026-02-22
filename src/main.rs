@@ -41,8 +41,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ===================================================
     // =================| APP STATE |=====================
     // ===================================================
-    let state = AppState::new(config, pool);
     let addr = format!("{}:{}", state.config.server_host, state.config.server_port);
+    let state = AppState::new(config, pool);
     let app = app::create_router(state);
     // Email service inside appstate
     tracing::info!("Email service initialized");
