@@ -32,9 +32,9 @@ pub async fn register(
         return Ok((StatusCode::BAD_REQUEST, Json(response)).into_response());
     }
 
-    let user_repo = state.user_repo;
+    let auth_repo = state.auth_repo;
     let auth_service = AuthService::new(
-        user_repo,
+        auth_repo,
         state.mail_service.clone(),
         state.token_service.clone(),
         state.config.clone(),
@@ -62,10 +62,10 @@ pub async fn verify(
         return Ok((StatusCode::BAD_REQUEST, Json(response)).into_response());
     }
 
-    let user_repo = state.user_repo;
+    let auth_repo = state.auth_repo;
 
     let auth_service = AuthService::new(
-        user_repo,
+        auth_repo,
         state.mail_service.clone(),
         state.token_service.clone(),
         state.config.clone(),
@@ -106,10 +106,10 @@ pub async fn resend_verification_email(
         .rate_limit(&rate_limit_key, 3, Duration::from_secs(300))
         .await?;
 
-    let user_repo = state.user_repo;
+    let auth_repo = state.auth_repo;
 
     let auth_service = AuthService::new(
-        user_repo,
+        auth_repo,
         state.mail_service.clone(),
         state.token_service.clone(),
         state.config.clone(),
@@ -150,10 +150,10 @@ pub async fn login(
         .unwrap_or("Unkown")
         .to_string();
 
-    let user_repo = Arc::new(AuthRepository::new(state.db.clone()));
+    let auth_repo = Arc::new(AuthRepository::new(state.db.clone()));
 
     let auth_service = AuthService::new(
-        user_repo,
+        auth_repo,
         state.mail_service.clone(),
         state.token_service.clone(),
         state.config.clone(),

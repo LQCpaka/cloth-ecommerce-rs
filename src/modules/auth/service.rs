@@ -26,7 +26,7 @@ pub struct TokenPair {
 }
 
 pub struct AuthService {
-    user_repo: Arc<AuthRepository>,
+    auth_repo: Arc<AuthRepository>,
     email_service: Arc<dyn MailService>,
     token_service: Arc<TokenService>,
     config: Arc<Config>,
@@ -34,13 +34,13 @@ pub struct AuthService {
 
 impl AuthService {
     pub fn new(
-        user_repo: Arc<AuthRepository>,
+        auth_repo: Arc<AuthRepository>,
         email_service: Arc<dyn MailService>,
         token_service: Arc<TokenService>,
         config: Arc<Config>,
     ) -> Self {
         Self {
-            user_repo,
+            auth_repo,
             email_service,
             token_service,
             config,
@@ -48,7 +48,7 @@ impl AuthService {
     }
 
     pub async fn register(&self, req: RegisterRequest) -> Result<User, AuthError> {
-        if self.user_repo.find_by_email(&req.email).await?.is_some() {
+        if self.auth_repo.find_by_email(&req.email).await?.is_some() {
             return Err(AuthError::UserAlreadyExists);
         }
 
@@ -56,7 +56,7 @@ impl AuthService {
             .map_err(|e| AuthError::SecurityError(e.to_string()))?;
 
         let new_user = self
-            .user_repo
+            .auth_repo
             .create_user(req.name, req.email, hashed_password)
             .await?;
 
@@ -64,7 +64,7 @@ impl AuthService {
         let verification_token = uuid::Uuid::new_v4().to_string();
 
         //Save token into DB
-        self.user_repo
+        self.auth_repo
             .save_otp(new_user.id, &verification_token)
             .await
             .map_err(|e| AuthError::DatabaseError(e))?;
@@ -89,7 +89,7 @@ impl AuthService {
     pub async fn verify_account(&self, req: VerifyEmailRequest) -> Result<String, AuthError> {
         // Find if user exists
         let user = self
-            .user_repo
+            .auth_repo
             .find_by_email(&req.email)
             .await?
             .ok_or(AuthError::EmailVerificationFailed)?;
@@ -98,24 +98,24 @@ impl AuthService {
             return Ok("Tài khoản này đã được kích hoạt rồi".to_string());
         }
         let otp_record = self
-            .user_repo
+            .auth_repo
             .find_otp_record(user.id, &req.token)
             .await?
             .ok_or(AuthError::InvalidVerificationToken)?;
 
         if otp_record.expires_at < chrono::Utc::now() {
-            let _ = self.user_repo.delete_user_otps(user.id).await?;
+            let _ = self.auth_repo.delete_user_otps(user.id).await?;
             return Err(AuthError::VerificationTokenExpired);
         }
 
         // If still valid and not expired -> Active account
-        self.user_repo
+        self.auth_repo
             .active_user(user.id)
             .await
             .map_err(|e| AuthError::DatabaseError(e))?;
 
         // Clean verification token
-        let _ = self.user_repo.delete_user_otps(user.id).await;
+        let _ = self.auth_repo.delete_user_otps(user.id).await;
 
         Ok("Kích hoạt tài khoản thành công!".to_string())
     }
@@ -125,7 +125,7 @@ impl AuthService {
         req: ResendVerifyEmailRequest,
     ) -> Result<String, AuthError> {
         let user = self
-            .user_repo
+            .auth_repo
             .find_by_email(&req.email)
             .await?
             .ok_or(AuthError::UserNotFound)?;
@@ -134,10 +134,10 @@ impl AuthService {
             return Ok("Tài khoản này vốn đã được kích hoạt".to_string());
         }
 
-        let _ = self.user_repo.delete_user_otps(user.id).await;
+        let _ = self.auth_repo.delete_user_otps(user.id).await;
         let verification_token = uuid::Uuid::new_v4().to_string();
 
-        self.user_repo
+        self.auth_repo
             .save_otp(user.id, &verification_token)
             .await
             .map_err(|e| AuthError::DatabaseError(e))?;
@@ -160,7 +160,7 @@ impl AuthService {
     ) -> Result<TokenPair, AuthError> {
         // 1. Find user
         let user = self
-            .user_repo
+            .auth_repo
             .find_by_email(&req.email)
             .await?
             .ok_or(AuthError::AuthorizationFailed)?;
@@ -195,7 +195,7 @@ impl AuthService {
         let refresh_token = self.token_service.generate_refresh_token();
 
         // 5. Lưu Session
-        self.user_repo
+        self.auth_repo
             .create_session(
                 user.id,
                 &refresh_token,
