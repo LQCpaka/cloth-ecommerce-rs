@@ -1,6 +1,7 @@
 use axum::http::HeaderMap;
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use std::sync::Arc;
+use std::time::Duration;
 use validator::Validate;
 
 use crate::app_state::AppState;
@@ -10,6 +11,7 @@ use crate::modules::auth::dto::{
 };
 use crate::modules::auth::repository::UserRepository;
 use crate::modules::auth::service::AuthService;
+use crate::shared::services::redis_service::{self, RedisService};
 use crate::shared::utils::flattern_error::flatten_errors;
 
 //API: [POST] - api/auth/register
@@ -106,6 +108,12 @@ pub async fn resend_verification_email(
         return Ok((StatusCode::BAD_REQUEST, Json(response)).into_response());
     }
 
+    let redis_service = RedisService::new(state.redis_pool.clone());
+    let rate_limit_key = format!("ratelimit:resend:{}", payload.email);
+    redis_service
+        .rate_limit(&rate_limit_key, 3, Duration::from_secs(300))
+        .await?;
+
     let user_repo = Arc::new(UserRepository::new(state.db.clone()));
 
     let auth_service = AuthService::new(
@@ -138,6 +146,11 @@ pub async fn login(
         return Err(AppError::validation_fields(clean_errors));
     }
 
+    let redis_service = RedisService::new(state.redis_pool.clone());
+    let rate_limit_key = format!("ratelimit:login:{}", payload.email);
+    redis_service
+        .rate_limit(&rate_limit_key, 5, Duration::from_secs(300))
+        .await?;
     // user-agent from header - (to know which browser people use)
     let user_agent = headers
         .get("User-Agent")
