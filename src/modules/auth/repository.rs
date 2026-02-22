@@ -1,7 +1,7 @@
 use crate::modules::user::model::{AuthProvider, User, UserRole, UserStatus};
 use sqlx::{Error, PgPool};
 
-pub struct UserRepository {
+pub struct AuthRepository {
     pool: PgPool,
 }
 
@@ -10,7 +10,7 @@ pub struct OtpRecord {
     pub expires_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl UserRepository {
+impl AuthRepository {
     // Create Func
     pub fn new(pool: PgPool) -> Self {
         Self { pool }

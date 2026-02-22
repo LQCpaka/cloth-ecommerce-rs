@@ -4,7 +4,7 @@ use crate::{
     config::Config,
     modules::{
         auth::{
-            UserRepository,
+            AuthRepository,
             dto::{LoginRequest, RegisterRequest, ResendVerifyEmailRequest, VerifyEmailRequest},
             error::AuthError,
         },
@@ -26,7 +26,7 @@ pub struct TokenPair {
 }
 
 pub struct AuthService {
-    user_repo: Arc<UserRepository>,
+    user_repo: Arc<AuthRepository>,
     email_service: Arc<dyn MailService>,
     token_service: Arc<TokenService>,
     config: Arc<Config>,
@@ -34,7 +34,7 @@ pub struct AuthService {
 
 impl AuthService {
     pub fn new(
-        user_repo: Arc<UserRepository>,
+        user_repo: Arc<AuthRepository>,
         email_service: Arc<dyn MailService>,
         token_service: Arc<TokenService>,
         config: Arc<Config>,

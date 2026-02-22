@@ -5,16 +5,23 @@ use std::sync::Arc;
 use crate::{
     config::Config,
     infrastructure::{mail::ResendMailService, redis::client::RedisInfra},
+    modules::{auth::AuthRepository, user::repository::UserRepository},
     shared::{ports::mail::MailService, services::jwt::TokenService},
 };
 
 #[derive(Clone)]
 pub struct AppState {
+    // ======================| ENV |=========================
+    pub config: Arc<Config>,
+    // ======================| POOL |========================
     pub db: PgPool,
     pub redis_pool: Pool,
+    // ==================| SERVICE STATE |===================
     pub mail_service: Arc<dyn MailService>,
     pub token_service: Arc<TokenService>,
-    pub config: Arc<Config>,
+    // ==================| REPO STATE |======================
+    pub auth_repo: Arc<AuthRepository>,
+    pub user_repo: Arc<UserRepository>,
 }
 
 impl AppState {
@@ -29,12 +36,20 @@ impl AppState {
             config.jwt_secret.clone(),
             config.jwt_expired_in.clone(),
         ));
+        //=======================================================
+        // =====================| REPO STATE |===================
+        //=======================================================
+        let auth_repo: Arc<AuthRepository> = Arc::new(AuthRepository::new(db.clone()));
+        let user_repo: Arc<UserRepository> = Arc::new(UserRepository::new(db.clone()));
+
         Self {
             db,
             redis_pool,
             mail_service,
             token_service,
             config,
+            auth_repo,
+            user_repo,
         }
     }
 }
