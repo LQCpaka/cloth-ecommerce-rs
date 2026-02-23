@@ -29,7 +29,7 @@ pub struct ProductVariant {
 }
 
 #[derive(Debug, Deserialize, Serialize, FromRow)]
-pub struct ProductCategorie {
+pub struct Category {
     pub id: i32,
     pub name: String,
     pub slug: String,
@@ -39,7 +39,7 @@ pub struct ProductCategorie {
 }
 
 #[derive(Debug, Deserialize, Serialize, FromRow)]
-pub struct ProductImages {
+pub struct ProductImage {
     pub id: Uuid,
     pub product_id: Uuid,
     pub variant_id: Option<Uuid>,
