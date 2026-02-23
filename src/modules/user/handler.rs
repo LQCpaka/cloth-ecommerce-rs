@@ -39,7 +39,7 @@ pub async fn get_my_profile(
     //No cache, find in db
     tracing::info!("Miss Cache! Lấy profile từ Database cho user: {}", user.id);
     let user_db = user_repo
-        .find_user_by_id(user.id) // Vợ nhớ viết hàm find_by_id(Uuid) trong repo nha
+        .find_user_by_id(user.id)
         .await?
         .ok_or_else(|| AppError::NotFound("Không tìm thấy thông tin người dùng".to_string()))?;
 
@@ -52,6 +52,7 @@ pub async fn get_my_profile(
         role: format!("{:?}", user_db.role),
     };
 
+    //save cache
     if let Ok(json_string) = serde_json::to_string(&profile_response) {
         let _ = redis_service
             .set(&cache_key, json_string, Duration::from_secs(900))
