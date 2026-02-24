@@ -5,7 +5,10 @@ use std::sync::Arc;
 use crate::{
     config::Config,
     infrastructure::{mail::ResendMailService, redis::client::RedisInfra},
-    modules::{auth::AuthRepository, user::repository::UserRepository},
+    modules::{
+        auth::AuthRepository, product::repository::CategoryRepository,
+        user::repository::UserRepository,
+    },
     shared::{ports::mail::MailService, services::jwt::TokenService},
 };
 
@@ -22,6 +25,7 @@ pub struct AppState {
     // ==================| REPO STATE |======================
     pub auth_repo: Arc<AuthRepository>,
     pub user_repo: Arc<UserRepository>,
+    pub category_repo: Arc<CategoryRepository>,
 }
 
 impl AppState {
@@ -41,6 +45,7 @@ impl AppState {
         //=======================================================
         let auth_repo: Arc<AuthRepository> = Arc::new(AuthRepository::new(db.clone()));
         let user_repo: Arc<UserRepository> = Arc::new(UserRepository::new(db.clone()));
+        let category_repo: Arc<CategoryRepository> = Arc::new(CategoryRepository::new(db.clone()));
 
         Self {
             db,
@@ -50,6 +55,7 @@ impl AppState {
             config,
             auth_repo,
             user_repo,
+            category_repo,
         }
     }
 }
