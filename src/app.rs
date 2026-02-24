@@ -58,4 +58,5 @@ fn api_v1() -> Router<AppState> {
     Router::new()
         .nest("/auth", modules::auth::router())
         .nest("/users", modules::user::router())
+        .nest("categories", modules::product::category_router())
 }
