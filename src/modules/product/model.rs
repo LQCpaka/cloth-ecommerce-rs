@@ -29,16 +29,6 @@ pub struct ProductVariant {
 }
 
 #[derive(Debug, Deserialize, Serialize, FromRow)]
-pub struct Category {
-    pub id: i32,
-    pub name: String,
-    pub slug: String,
-    pub parent_id: Option<i32>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Deserialize, Serialize, FromRow)]
 pub struct ProductImage {
     pub id: Uuid,
     pub product_id: Uuid,

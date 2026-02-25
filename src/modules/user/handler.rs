@@ -49,7 +49,7 @@ pub async fn get_my_profile(
         name: user_db.name,
         avatar_url: user_db.avatar_url,
         description: user_db.description,
-        role: format!("{:?}", user_db.role),
+        role: user_db.role,
     };
 
     //save cache

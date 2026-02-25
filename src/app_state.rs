@@ -6,7 +6,7 @@ use crate::{
     config::Config,
     infrastructure::{mail::ResendMailService, redis::client::RedisInfra},
     modules::{
-        auth::AuthRepository, product::repository::CategoryRepository,
+        auth::AuthRepository, category::repository::CategoryRepository,
         user::repository::UserRepository,
     },
     shared::{ports::mail::MailService, services::jwt::TokenService},

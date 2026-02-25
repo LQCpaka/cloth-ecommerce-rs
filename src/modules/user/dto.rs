@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::modules::user::model::UserRole;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserProfileResponse {
     pub id: Uuid,
@@ -8,5 +10,5 @@ pub struct UserProfileResponse {
     pub name: String,
     pub avatar_url: Option<String>,
     pub description: Option<String>,
-    pub role: String,
+    pub role: UserRole,
 }
