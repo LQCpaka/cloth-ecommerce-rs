@@ -188,7 +188,7 @@ impl AuthService {
         // 3. Generate Access Token
         let access_token = self
             .token_service
-            .generate_access_token(user.id, format!("{:?}", user.role), user.email)
+            .generate_access_token(user.id, user.role, user.email)
             .map_err(|e| AuthError::SecurityError(e.to_string()))?;
 
         // 4. Generate Refresh Token

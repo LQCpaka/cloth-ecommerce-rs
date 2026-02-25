@@ -6,7 +6,7 @@ use uuid::Uuid;
 //==================| ENUM |=====================
 
 // DB type: user_role_type
-#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(PartialEq, Debug, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "user_role_type", rename_all = "lowercase")]
 #[serde(rename_all = "snake_case")]
 pub enum UserRole {

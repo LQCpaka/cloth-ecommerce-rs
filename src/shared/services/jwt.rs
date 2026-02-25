@@ -3,13 +3,15 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
+use crate::modules::user::model::UserRole;
+
 // Access Token
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
     pub iat: usize,
     pub exp: usize,
-    pub role: String,
+    pub role: UserRole,
     pub email: String,
 }
 
@@ -30,7 +32,7 @@ impl TokenService {
     pub fn generate_access_token(
         &self,
         user_id: uuid::Uuid,
-        role: String,
+        role: UserRole,
         email: String,
     ) -> Result<String, String> {
         let now = Utc::now();

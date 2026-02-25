@@ -7,6 +7,7 @@ use crate::{
     modules::{
         auth::guard::AuthUser,
         category::{dto::CreateCategoryRequest, service::CategoryService},
+        user::model::UserRole,
     },
 };
 
@@ -34,14 +35,8 @@ pub async fn create_category(
     user: AuthUser, // Require login Bearer
     Json(payload): Json<CreateCategoryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // 👇 1. CHUẨN HÓA ROLE TRƯỚC KHI XÉT DUYỆT
-    // Biến tất cả thành chữ thường, cắt khoảng trắng dư, và xóa dấu nháy kép (nếu có bị dính)
-    let current_role = user.role.trim().to_lowercase().replace("\"", "");
-
-    tracing::info!("Đang kiểm tra quyền cho Role thực tế: '{}'", current_role); // In ra log xem cho chắc
-
-    if current_role != "admin" && current_role != "seller" {
-        tracing::warn!("Báo động: Role '{}' cố gắng tạo danh mục!", current_role);
+    // 1. Phân quyền sơ bộ: Chỉ Admin hoặc Seller mới được phép qua
+    if user.role != UserRole::Admin && user.role != UserRole::Seller {
         return Err(AppError::Unauthorized(
             "Bạn không có quyền thực hiện chức năng này!".to_string(),
         ));

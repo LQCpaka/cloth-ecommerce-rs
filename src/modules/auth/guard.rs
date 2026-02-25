@@ -2,11 +2,14 @@ use axum::{extract::FromRequestParts, http::request::Parts};
 use jsonwebtoken::{DecodingKey, Validation, decode};
 use uuid::Uuid;
 
-use crate::{app_state::AppState, error::AppError, shared::services::jwt::Claims};
+use crate::{
+    app_state::AppState, error::AppError, modules::user::model::UserRole,
+    shared::services::jwt::Claims,
+};
 
 pub struct AuthUser {
     pub id: Uuid,
-    pub role: String,
+    pub role: UserRole,
     pub email: String,
 }
 
