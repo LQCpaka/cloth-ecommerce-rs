@@ -42,7 +42,7 @@ impl CategoryRepository {
         // Should take a look: ORDER BY parent_id NULLS FIRST
         // This helps root categories (those without a parent) always stay at the top, making tree structure easier.
         let categories = sqlx::query_as::<_, Category>(
-            "SELECT * FROM categories ORDER BY parent_id NULL FIRST, id ASC",
+            "SELECT * FROM categories ORDER BY parent_id ASC NULLS FIRST, id ASC",
         )
         .fetch_all(&self.pool)
         .await
