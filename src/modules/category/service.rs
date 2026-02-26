@@ -62,3 +62,52 @@ impl CategoryService {
         result
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*; // Import toàn bộ code ở file hiện tại vào khu vực test
+    use chrono::Utc;
+    use std::collections::HashMap;
+
+    // Hàm tạo Category giả (Mock data) để test cho lẹ
+    fn mock_category(id: i32, name: &str, parent_id: Option<i32>) -> Category {
+        Category {
+            id,
+            name: name.to_string(),
+            slug: name.to_lowercase().replace(" ", "-"),
+            parent_id,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn test_category_build_tree_logic() {
+        // 1. Chuẩn bị dữ liệu giả (Mock Data)
+        let mut map: HashMap<Option<i32>, Vec<Category>> = HashMap::new();
+
+        // Nhánh 1: Thời trang Nam (id: 1) -> Áo Nam (id: 2) -> Áo Thun (id: 3)
+        map.insert(None, vec![mock_category(1, "Thời trang Nam", None)]);
+        map.insert(Some(1), vec![mock_category(2, "Áo Nam", Some(1))]);
+        map.insert(Some(2), vec![mock_category(3, "Áo Thun", Some(2))]);
+
+        // 2. Chạy hàm cần test (gọi hàm private thoải mái vì test nằm chung file)
+        let tree = CategoryService::build_tree(None, &map);
+
+        // 3. Kiểm tra kết quả (Assert)
+        // - Cây phải có đúng 1 nhánh gốc (Thời trang Nam)
+        assert_eq!(tree.len(), 1);
+        assert_eq!(tree[0].name, "Thời trang Nam");
+
+        // - Thời trang Nam phải có 1 đứa con (Áo Nam)
+        assert_eq!(tree[0].children.len(), 1);
+        assert_eq!(tree[0].children[0].name, "Áo Nam");
+
+        // - Áo Nam phải có 1 đứa cháu (Áo Thun)
+        assert_eq!(tree[0].children[0].children.len(), 1);
+        assert_eq!(tree[0].children[0].children[0].name, "Áo Thun");
+
+        // - Áo Thun không được có con (rỗng)
+        assert_eq!(tree[0].children[0].children[0].children.len(), 0);
+    }
+}

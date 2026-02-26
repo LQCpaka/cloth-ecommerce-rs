@@ -56,3 +56,18 @@ impl FromRequestParts<AppState> for AuthUser {
         })
     }
 }
+
+impl AuthUser {
+    pub fn require_roles(&self, allow_roles: &[UserRole]) -> Result<(), AppError> {
+        if !allowed_roles.contains(&self.role) {
+            tracing::warn!(
+                "Báo động: Role '{:?}' cố gắng truy cập trái phép!",
+                self.role
+            );
+            return Err(AppError::Unauthorized(
+                "Bạn không đủ quyền để thực hiện chức năng này!".to_string(),
+            ));
+        }
+        Ok(())
+    }
+}
