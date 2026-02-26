@@ -14,7 +14,7 @@ use crate::{
         ports::mail::MailService,
         services::{
             PasswordService,
-            email_sample::{EmailConfig, send_register_verification, send_resend_verification},
+            email_template::{EmailConfig, send_register_verification, send_resend_verification},
             jwt::TokenService,
         },
     },
