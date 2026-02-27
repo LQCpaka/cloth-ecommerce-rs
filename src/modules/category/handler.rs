@@ -36,11 +36,7 @@ pub async fn create_category(
     Json(payload): Json<CreateCategoryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // 1. Phân quyền sơ bộ: Chỉ Admin hoặc Seller mới được phép qua
-    if user.role != UserRole::Admin && user.role != UserRole::Seller {
-        return Err(AppError::Unauthorized(
-            "Bạn không có quyền thực hiện chức năng này!".to_string(),
-        ));
-    }
+    user.require_roles(&[UserRole::Admin, UserRole::Seller])?;
 
     // 2. Kiểm tra dữ liệu hợp lệ (Validation)
     if let Err(e) = payload.validate() {
