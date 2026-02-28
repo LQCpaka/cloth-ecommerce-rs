@@ -1,10 +1,7 @@
 use bigdecimal::BigDecimal;
 use sqlx::PgPool;
 
-use crate::{
-    error::AppError,
-    modules::product::{dto::CreateProductRequest, model::Product},
-};
+use crate::{error::AppError, modules::product::model::Product};
 
 pub struct ProductRepository {
     pool: PgPool,

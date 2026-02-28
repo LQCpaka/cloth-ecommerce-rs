@@ -69,7 +69,8 @@ pub fn create_router(state: AppState) -> Router {
 
 fn api_v1() -> Router<AppState> {
     Router::new()
-        .nest("/auth", modules::auth::router())
-        .nest("/users", modules::user::router())
+        .nest("/auth", modules::auth::auth_router())
+        .nest("/users", modules::user::user_router())
         .nest("/categories", modules::category::category_router())
+        .nest("/products", modules::product::product_router())
 }

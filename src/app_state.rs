@@ -7,7 +7,7 @@ use crate::{
     infrastructure::{mail::ResendMailService, redis::client::RedisInfra},
     modules::{
         auth::AuthRepository, category::repository::CategoryRepository,
-        user::repository::UserRepository,
+        product::repository::ProductRepository, user::repository::UserRepository,
     },
     shared::{ports::mail::MailService, services::jwt::TokenService},
 };
@@ -26,6 +26,7 @@ pub struct AppState {
     pub auth_repo: Arc<AuthRepository>,
     pub user_repo: Arc<UserRepository>,
     pub category_repo: Arc<CategoryRepository>,
+    pub product_repo: Arc<ProductRepository>,
 }
 
 impl AppState {
@@ -46,7 +47,7 @@ impl AppState {
         let auth_repo: Arc<AuthRepository> = Arc::new(AuthRepository::new(db.clone()));
         let user_repo: Arc<UserRepository> = Arc::new(UserRepository::new(db.clone()));
         let category_repo: Arc<CategoryRepository> = Arc::new(CategoryRepository::new(db.clone()));
-
+        let product_repo: Arc<ProductRepository> = Arc::new(ProductRepository::new(db.clone()));
         Self {
             db,
             redis_pool,
@@ -56,6 +57,7 @@ impl AppState {
             auth_repo,
             user_repo,
             category_repo,
+            product_repo,
         }
     }
 }
