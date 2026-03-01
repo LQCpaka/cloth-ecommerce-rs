@@ -1,4 +1,10 @@
-use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
+use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
@@ -6,7 +12,10 @@ use crate::{
     error::AppError,
     modules::{
         auth::guard::AuthUser,
-        product::{dto::CreateProductRequest, service::ProductService},
+        product::{
+            dto::{CreateProductRequest, CreateVariantRequest},
+            service::ProductService,
+        },
         user::model::UserRole,
     },
 };
@@ -37,6 +46,36 @@ pub async fn create_product(
             "status": "success",
             "message": "Tạo sản phẩm nháp thành công!",
             "data": new_product
+        })),
+    )
+        .into_response())
+}
+
+//API: POST api/v1/products/variants
+pub async fn create_variant(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(product_id): Path<Uuid>,
+    Json(payload): Json<CreateVariantRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    user.require_roles(&[UserRole::Admin, UserRole::Moderator, UserRole::Seller])?;
+
+    // input validate
+    if let Err(_e) = payload.validate() {
+        return Err(AppError::BadRequest(
+            "Dữ liệu SKU không hợp lệ!".to_string(),
+        ));
+    }
+
+    let product_service = ProductService::new(state.product_repo.clone());
+    let new_variant = product_service.create_variant(product_id, payload).await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "status": "success",
+            "message": "Nhập kho phân loại thành công!",
+            "data":new_variant
         })),
     )
         .into_response())

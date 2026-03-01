@@ -2,7 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     error::AppError,
-    modules::product::{dto::CreateProductRequest, model::Product, repository::ProductRepository},
+    modules::product::{
+        dto::{CreateProductRequest, CreateVariantRequest},
+        model::{Product, ProductVariant},
+        repository::ProductRepository,
+    },
 };
 
 pub struct ProductService {
@@ -23,6 +27,16 @@ impl ProductService {
                 req.description,
                 req.base_price,
             )
+            .await
+    }
+
+    pub async fn create_variant(
+        &self,
+        product_id: uuid::Uuid,
+        req: CreateVariantRequest,
+    ) -> Result<ProductVariant, AppError> {
+        self.repo
+            .create_variant(product_id, &req.sku, req.price_override, req.stock_quantity)
             .await
     }
 }

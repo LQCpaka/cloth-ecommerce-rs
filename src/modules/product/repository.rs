@@ -2,7 +2,10 @@ use bigdecimal::BigDecimal;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{error::AppError, modules::product::model::{Product, ProductVariant}};
+use crate::{
+    error::AppError,
+    modules::product::model::{Product, ProductVariant},
+};
 
 pub struct ProductRepository {
     pool: PgPool,
@@ -50,8 +53,27 @@ impl ProductRepository {
         product_id: Uuid,
         sku: &str,
         price_override: Option<BigDecimal>,
-        stock_quantity: i32
+        stock_quantity: i32,
     ) -> Result<ProductVariant, AppError> {
-        let variant = sqlx::query_as::<_, ProductVariant>(sql)
+        let variant = sqlx::query_as::<_, ProductVariant>(
+            r#"
+                INSERT INTO product_variants (product_id, sku, price_override, stock_quantity)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
+            "#,
+        )
+        .bind(product_id)
+        .bind(sku)
+        .bind(price_override)
+        .bind(stock_quantity)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            //If seller type input same SKU, DB will return an error, something like that
+            tracing::error!("Lỗi tạo variant (nhập kho): {:?}", e);
+            AppError::Database(e)
+        })?;
+
+        Ok(variant)
     }
 }
