@@ -1,4 +1,8 @@
 <h1 align="center">Cloth Ecommerce</h1>
+<p align="center">
+  <em>A blazing-fast REST API for selling clothes, built with Rust & Axum</em>
+</p>
+
 <div align="center">
   <img src="https://img.shields.io/badge/Rust-CE422B?style=for-the-badge&logo=rust&logoColor=white&labelColor=8B2500" />
   <img src="https://img.shields.io/badge/Axum-CE422B?style=for-the-badge&logo=rust&logoColor=white&labelColor=8B2500" />
@@ -10,18 +14,34 @@
   <img src="https://img.shields.io/badge/REST API-FF9900?style=for-the-badge&logo=amazonapigateway&logoColor=white&labelColor=c47500" />
 </div>
 
-## ❓ ABOUT PROJECT
-* This is Cloth Ecommerce, **REST-API** written in **Rust**. I was planning to write it with Golang, but after considering all the case, I decided to implement with **Rust - Axum**. The project using Axum, which is built on top Tokio, and use **Tower** or building robust networking clients and servers. Using Modular + Layered Architecture to implement medium scale for small team or even solo dev. <br/>
+<br/>
 
-* Cloth Ecommerce is for optimizing memory consuming. That's why I'm not gonna use C#, Java or even a Golang for this project, just because of GC (Garbage Collector). Amd good scaling but also not overengineering, without microservice, only mono repo. I challenge myself with a brandnew and hard development framework (actix harder, I know), to learn how a programming language that not use GC, to see how far I can go.
+<div align="center">
+  <img src="https://img.shields.io/badge/Status-In%20Development-yellow?style=flat-square" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
+  <img src="https://img.shields.io/badge/Architecture-Modular%20%2B%20Layered-blue?style=flat-square" />
+</div>
+
+## ❓ ABOUT
+**Cloth Ecommerce** is a REST API for an online clothing store, built with **Rust + Axum**. The project prioritizes **zero-GC memory efficiency** — no Java, no C#, no Go. Just raw Rust performance.
+
+Built on top of **Tokio** (async runtime) and **Tower** (middleware/service abstractions), this project uses a **Modular + Layered Architecture** — clean enough for a solo dev, scalable enough for a small team. No microservices, no overengineering. Just a solid monorepo that gets the job done.
+
+> Why Rust over Golang? Simple — no garbage collector means predictable, low memory consumption at scale. This project is also a personal challenge to push deeper into systems programming with a production-grade use case., only mono repo. I challenge myself with a brandnew and hard development framework (actix harder, I know), to learn how a programming language that not use GC, to see how far I can go.
 
 ## ℹ️ STATUS
-This project is quite new and still under development. Both **Backend/Frontend** is building as well. May take a while to finish. So please, be patient. I had a few experience in Rust application development before, so, it wont take long, maybe :v.
+This project is actively under development. Both backend and (planned) frontend are being built simultaneously.
 
-### Project currently use:
-* Axum
-* Tower
-* Sqlx - Postgresql
-* Redis - Rate Litming/Caching
+- [x] Project setup & architecture
+- [x] Database migrations
+- [x] Docker dev environment
+- [X] Auth module (JWT)
+- [X] Product module
+- [X] Image upload (R2)
+- [X] Rate limiting (Redis)
+- [ ] Frontend
+- [ ] Order module
+- [ ] Etc
 
->Anyway, thanks for reading all of this.
+---
+<p align="center">Made with 🦀 and a bit of suffering</p>
