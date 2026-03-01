@@ -1,7 +1,8 @@
 use bigdecimal::BigDecimal;
 use sqlx::PgPool;
+use uuid::Uuid;
 
-use crate::{error::AppError, modules::product::model::Product};
+use crate::{error::AppError, modules::product::model::{Product, ProductVariant}};
 
 pub struct ProductRepository {
     pool: PgPool,
@@ -24,8 +25,8 @@ impl ProductRepository {
         // Defeault status :  "draft" incase user want to upload imgs, variant
         let product = sqlx::query_as::<_, Product>(
             r#"
-                INSERT INTO products (category_id, name, slug, description, base_price)
-                VALUES ($1, $2, $3, $4, $5, 'draft)
+                INSERT INTO products (category_id, name, slug, description, base_price, status)
+                VALUES ($1, $2, $3, $4, $5, 'draft')
                 RETURNING *
             "#,
         )
@@ -42,5 +43,15 @@ impl ProductRepository {
         })?;
 
         Ok(product)
+    }
+
+    pub async fn create_variant(
+        &self,
+        product_id: Uuid,
+        sku: &str,
+        price_override: Option<BigDecimal>,
+        stock_quantity: i32
+    ) -> Result<ProductVariant, AppError> {
+        let variant = sqlx::query_as::<_, ProductVariant>(sql)
     }
 }

@@ -41,6 +41,11 @@ pub fn create_router(state: AppState) -> Router {
         .with_state(state)
         .layer(
             ServiceBuilder::new()
+                .layer(SetRequestIdLayer::new(
+                    X_REQUEST_ID.clone(),
+                    MakeRequestUuid,
+                ))
+                .layer(PropagateRequestIdLayer::new(X_REQUEST_ID.clone()))
                 .layer(
                     TraceLayer::new_for_http()
                         .make_span_with(|request: &Request<_>| {
@@ -58,11 +63,6 @@ pub fn create_router(state: AppState) -> Router {
                         })
                         .on_response(DefaultOnResponse::new().level(Level::INFO)),
                 )
-                .layer(PropagateRequestIdLayer::new(X_REQUEST_ID.clone()))
-                .layer(SetRequestIdLayer::new(
-                    X_REQUEST_ID.clone(),
-                    MakeRequestUuid,
-                ))
                 .layer(cors),
         )
 }

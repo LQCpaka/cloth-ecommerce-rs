@@ -15,3 +15,12 @@ pub struct CreateProductRequest {
 
     pub base_price: BigDecimal,
 }
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct CreateVariantRequest {
+    // SKU (Stock Keeping Unit)
+    #[validate(length(min = 3, message = "Mã SKU phải có ít nhất 3 ký tự"))]
+    pub sku: String,
+    pub price_override: Option<BigDecimal>,
+    pub stock_quantity: i32,
+}
