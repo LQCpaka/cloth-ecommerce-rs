@@ -21,6 +21,12 @@ pub struct Config {
     pub jwt_secret: String,
     pub jwt_expired_in: i64,
     pub refresh_token_expired_in: i32,
+    //cloudflare env
+    pub cf_r2_endpoint: String,
+    pub cf_r2_access_key: String,
+    pub cf_r2_secret_key: String,
+    pub cf_r2_bucket: String,
+    pub public_asset_url: String,
 }
 
 impl Config {
@@ -64,6 +70,12 @@ impl Config {
                 .map_err(|e| {
                     ConfigError::InvalidNumber("REFRESH_TOKEN_EXPIRED_IN".into(), e.to_string())
                 })?,
+            //==============================| CLOUDFLARE |==============================
+            cf_r2_access_key: Self::get_env("CF_R2_ACCESS_KEY")?,
+            cf_r2_secret_key: Self::get_env("CF_R2_SECRET_KEY")?,
+            cf_r2_endpoint: Self::get_env("CF_R2_ENDPOINT")?,
+            cf_r2_bucket: Self::get_env("CF_R2_BUCKET")?,
+            public_asset_url: Self::get_env("PUBLIC_ASSET_URL")?,
         })
     }
 }
