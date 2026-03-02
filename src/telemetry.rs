@@ -27,7 +27,7 @@ pub fn init() {
                 tracing_subscriber::fmt::layer()
                     .pretty() // dễ đọc ở terminal
                     .with_target(true)
-                    .with_file(true)
+                    .with_file(false)
                     .with_line_number(true),
             )
             .init();
