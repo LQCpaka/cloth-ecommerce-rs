@@ -76,4 +76,27 @@ impl ProductRepository {
 
         Ok(variant)
     }
+
+    pub async fn add_product_image(
+        &self,
+        product_id: Uuid,
+        image_url: &str,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            INSERT INTO product_images (product_id, image_url)
+            VALUES ($1, $2)
+            "#,
+        )
+        .bind(product_id)
+        .bind(image_url)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Lỗi lưu link ảnh sản phẩm vào DB: {:?}", e);
+            AppError::Database(e)
+        })?;
+
+        Ok(())
+    }
 }

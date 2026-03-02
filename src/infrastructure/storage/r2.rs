@@ -11,7 +11,7 @@ use crate::error::AppError;
 pub struct UploadService {
     s3_client: Client,
     bucket_name: String,
-    public_url: String, // Cái images.domain.com của vợ sẽ nằm ở đây
+    public_url: String,
 }
 
 impl UploadService {
@@ -42,7 +42,7 @@ impl UploadService {
     }
 
     // ==========================================
-    // 2. NHẬN FILE TỪ AXUM VÀ BẮN LÊN MÂY 🚀
+    // 2. NHẬN FILE TỪ AXUM
     // ==========================================
     pub async fn upload_image(&self, mut multipart: Multipart) -> Result<String, AppError> {
         // Lục lọi trong gói hàng gửi lên xem có cái nào tên là "file" không
@@ -81,7 +81,7 @@ impl UploadService {
                         AppError::StorageService("Không thể lưu ảnh vào kho".to_string())
                     })?;
 
-                // Nối tên miền của vợ vào để trả về URL xịn xò: https://images.domain.com/uuid.jpg
+                // Nối tên miền vào để trả về URL xịn xò: https://images.domain.com/uuid.jpg
                 let image_url = format!("{}/{}", self.public_url, unique_filename);
                 return Ok(image_url);
             }

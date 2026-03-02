@@ -6,4 +6,5 @@ pub fn product_router() -> Router<AppState> {
     Router::new()
         .route("/", post(handler::create_product))
         .route("/{product_id}/variants", post(handler::create_variant))
+        .route("/{product_id}/images", post(handler::upload_product_image))
 }

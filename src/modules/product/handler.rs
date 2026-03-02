@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Multipart, Path, State},
     http::StatusCode,
     response::IntoResponse,
 };
@@ -76,6 +76,38 @@ pub async fn create_variant(
             "status": "success",
             "message": "Nhập kho phân loại thành công!",
             "data":new_variant
+        })),
+    )
+        .into_response())
+}
+
+// API: POST /api/v1/products/:product_id/images
+pub async fn upload_product_image(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(product_id): Path<Uuid>,
+    multipart: Multipart,
+) -> Result<impl IntoResponse, AppError> {
+    user.require_roles(&[UserRole::Admin, UserRole::Moderator, UserRole::Seller])?;
+
+    // Calling UploadService to send file to Cloudflare R2
+    let image_url = state.upload_service.upload_image(multipart).await?;
+
+    // Save the link into db
+    state
+        .product_repo
+        .add_product_image(product_id, &image_url)
+        .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "status": "success",
+            "message": "Upload ảnh lên mây thành công!",
+            "data": {
+                "product_id": product_id,
+                "image_url": image_url
+            }
         })),
     )
         .into_response())

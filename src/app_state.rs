@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use crate::{
     config::Config,
-    infrastructure::{mail::ResendMailService, redis::client::RedisInfra},
+    infrastructure::{
+        mail::ResendMailService, redis::client::RedisInfra, storage::r2::UploadService,
+    },
     modules::{
         auth::AuthRepository, category::repository::CategoryRepository,
         product::repository::ProductRepository, user::repository::UserRepository,
@@ -22,6 +24,7 @@ pub struct AppState {
     // ==================| SERVICE STATE |===================
     pub mail_service: Arc<dyn MailService>,
     pub token_service: Arc<TokenService>,
+    pub upload_service: Arc<UploadService>,
     // ==================| REPO STATE |======================
     pub auth_repo: Arc<AuthRepository>,
     pub user_repo: Arc<UserRepository>,
@@ -48,6 +51,16 @@ impl AppState {
         let user_repo: Arc<UserRepository> = Arc::new(UserRepository::new(db.clone()));
         let category_repo: Arc<CategoryRepository> = Arc::new(CategoryRepository::new(db.clone()));
         let product_repo: Arc<ProductRepository> = Arc::new(ProductRepository::new(db.clone()));
+        //=======================================================
+        // ======================| SERVICE |=====================
+        //=======================================================
+        let upload_service = Arc::new(UploadService::new(
+            config.cf_r2_endpoint.clone(),
+            config.cf_r2_access_key.clone(),
+            config.cf_r2_secret_key.clone(),
+            config.cf_r2_bucket.clone(),
+            config.public_asset_url.clone(), // Cái tên miền images.domain.com á
+        ));
         Self {
             db,
             redis_pool,
@@ -58,6 +71,7 @@ impl AppState {
             user_repo,
             category_repo,
             product_repo,
+            upload_service,
         }
     }
 }
