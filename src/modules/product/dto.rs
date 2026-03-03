@@ -1,5 +1,6 @@
 use bigdecimal::BigDecimal;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -28,11 +29,15 @@ pub struct CreateVariantRequest {
     pub stock_quantity: i32,
 }
 
+#[derive(Debug, Serialize, FromRow)]
 pub struct ProductDetailResponse {
     pub id: Uuid,
     pub name: String,
+    pub slug: String,
     pub description: Option<String>,
     pub base_price: BigDecimal,
-    //All variant
-    pub variants: Vec<ProductVariant>,
+    pub status: String,
+    pub images: Vec<String>, // PostgreSQL array_agg
+    // Wrap the JSON in the code so that SQLx automatically parses the jsonb_agg block.
+    pub variants: sqlx::types::Json<Vec<ProductVariant>>,
 }
