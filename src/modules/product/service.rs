@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
+use uuid::Uuid;
+
 use crate::{
     error::AppError,
     modules::product::{
-        dto::{CreateProductRequest, CreateVariantRequest},
+        dto::{CreateProductRequest, CreateVariantRequest, ProductDetailResponse},
         model::{Product, ProductVariant},
         repository::ProductRepository,
     },
@@ -38,5 +40,12 @@ impl ProductService {
         self.repo
             .create_variant(product_id, &req.sku, req.price_override, req.stock_quantity)
             .await
+    }
+
+    pub async fn get_product_detail(
+        &self,
+        product_id: Uuid,
+    ) -> Result<ProductDetailResponse, AppError> {
+        self.repo.get_product_detail(product_id).await
     }
 }

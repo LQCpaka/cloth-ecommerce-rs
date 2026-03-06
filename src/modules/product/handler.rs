@@ -20,6 +20,24 @@ use crate::{
     },
 };
 
+//API: GET api/v1/products/:id
+pub async fn get_product_detail(
+    State(state): State<AppState>,
+    Path(product_id): Path<Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    let product_service = ProductService::new(state.product_repo.clone());
+    let product = product_service.get_product_detail(product_id).await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "success",
+            "data": product
+        })),
+    )
+        .into_response())
+}
+
 //API: POST api/v1/products
 pub async fn create_product(
     State(state): State<AppState>,
