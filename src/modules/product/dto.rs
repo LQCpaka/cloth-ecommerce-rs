@@ -41,3 +41,9 @@ pub struct ProductDetailResponse {
     // Wrap the JSON in the code so that SQLx automatically parses the jsonb_agg block.
     pub variants: sqlx::types::Json<Vec<ProductVariant>>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct ProductListQuery {
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+}
