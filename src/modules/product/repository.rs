@@ -161,10 +161,10 @@ impl ProductRepository {
         let products = sqlx::query_as::<_, ProductListItemResponse>(
                 r#"
                 SELECT
-                    p.id
+                    p.id,
                     p.name,
                     p.slug,
-                    p.base_price
+                    p.base_price,
                     (SELECT image_url FROM product_images where product_id = p.id LIMIT 1) as thumbnail
                 FROM products p
                 ORDER BY p.created_at DESC

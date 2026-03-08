@@ -155,6 +155,7 @@ pub async fn create_variant(
 }
 
 // API: POST /api/v1/products/:product_id/images
+// upload image need a field: "file" for image_url
 pub async fn upload_product_image(
     State(state): State<AppState>,
     user: AuthUser,
