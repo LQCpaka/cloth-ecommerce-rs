@@ -88,4 +88,16 @@ impl RedisService {
         }
         Ok(())
     }
+
+    // just like HINCRBY key field increment
+    pub async fn hincr(&self, key: &str, field: &str, increment: f64) -> Result<f64, AppError> {
+        let mut conn = self.conn().await?;
+
+        let new_value: f64 = conn.hincr(key, field, increment).await.map_err(|e| {
+            tracing::error!("Lỗi Redis HINCRBY: {:?}", e);
+            AppError::Redis("Lỗi cập nhật giỏ hàng".to_string())
+        })?;
+
+        Ok(new_value)
+    }
 }
