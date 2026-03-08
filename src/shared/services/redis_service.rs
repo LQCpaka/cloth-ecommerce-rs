@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use deadpool_redis::{Connection, Pool};
 use redis::AsyncTypedCommands;
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 
 pub struct RedisService {
     pool: Pool,
@@ -99,5 +99,27 @@ impl RedisService {
         })?;
 
         Ok(new_value)
+    }
+
+    pub async fn hgetall(&self, key: &str) -> Result<HashMap<String, i32>, AppError> {
+        let mut conn = self.conn().await?;
+
+        let result: HashMap<String, String> = conn.hgetall(key).await.map_err(|e| {
+            tracing::error!("Lỗi Redis HGETALL: {:?}", e);
+            AppError::Redis("Không thể lấy thông tin giỏ hàng".to_string())
+        })?;
+
+        let parsed = result
+            .into_iter()
+            .map(|(k, v)| {
+                let quantity = v.parse::<i32>().map_err(|e| {
+                    tracing::error!("Lỗi parse quantity '{}': {:?}", v, e);
+                    AppError::Redis(format!("Giá trị không hợp lệ cho key '{}'", k))
+                })?;
+                Ok((k, quantity))
+            })
+            .collect::<Result<HashMap<String, i32>, AppError>>()?;
+
+        Ok(parsed)
     }
 }
