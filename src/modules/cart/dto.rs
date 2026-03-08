@@ -1,7 +1,8 @@
 use bigdecimal::BigDecimal;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
+use validator::Validate;
 
 // 1. Raw Data from DB
 #[derive(Debug, FromRow)]
@@ -30,4 +31,15 @@ pub struct CartItemResponse {
 pub struct CartResponse {
     pub items: Vec<CartItemResponse>,
     pub total_price: BigDecimal, // Total price of cart
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct AddToCartRequest {
+    // Mã của món hàng cụ thể (Ví dụ: ID của đôi giày size 42 màu Đen)
+    pub variant_id: Uuid,
+
+    // Số lượng muốn nhét vào giỏ
+    // Dùng thư viện validator để chặn đứng mấy ông khách cố tình nhập số âm hack hệ thống!
+    #[validate(range(min = 1, message = "Số lượng thêm vào giỏ hàng phải từ 1 trở lên!"))]
+    pub quantity: i32,
 }
