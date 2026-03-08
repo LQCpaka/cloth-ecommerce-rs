@@ -1,6 +1,8 @@
+use std::time::Duration;
+
 use axum::{
     Json,
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
 };
@@ -13,12 +15,65 @@ use crate::{
     modules::{
         auth::guard::AuthUser,
         product::{
-            dto::{CreateProductRequest, CreateVariantRequest},
+            dto::{
+                CreateProductRequest, CreateVariantRequest, ProductListItemResponse,
+                ProductListQuery,
+            },
             service::ProductService,
         },
         user::model::UserRole,
     },
+    shared::services::redis_service::RedisService,
 };
+
+//API: GET api/v1/products
+pub async fn get_products(
+    State(state): State<AppState>,
+    Query(query): Query<ProductListQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let redis_service = RedisService::new(state.redis_pool.clone());
+    let cache_key = format!("product:list:{}", query);
+
+    //Hit cache
+    if let Ok(Some(cached_data)) = redis_service.get(&cache_key).await {
+        tracing::info!("Hit cache! Lấy list data cho querry: {}", query);
+
+        if let Ok(products) = serde_json::from_str::<Vec<ProductListItemResponse>>(&cached_data) {
+            return Ok((
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "status": "successs",
+                    "data": products
+                })),
+            )
+                .into_response());
+        }
+    }
+
+    //No cache, find in db (query)
+    tracing::info!(
+        "Miss Cache! Lấy list products từ Database theo query: {}",
+        query
+    );
+    let product_service = ProductService::new(state.product_repo.clone());
+    let products = product_service.get_products(query).await?;
+
+    //save cache
+    if let Ok(json_string) = serde_json::to_string(&products) {
+        let _ = redis_service
+            .set(&cache_key, json_string, Duration::from_secs(900))
+            .await;
+    }
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+        "status": "success",
+        "data": products
+
+        })),
+    )
+        .into_response())
+}
 
 //API: GET api/v1/products/:id
 pub async fn get_product_detail(

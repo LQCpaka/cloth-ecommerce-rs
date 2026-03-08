@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     error::AppError,
     modules::product::{
-        dto::ProductDetailResponse,
+        dto::{ProductDetailResponse, ProductListItemResponse},
         model::{Product, ProductVariant},
     },
 };
@@ -149,5 +149,36 @@ impl ProductRepository {
             .ok_or_else(|| AppError::NotFound("Không tìm thấy sản phẩm này!".to_string()))?;
 
         Ok(product)
+    }
+
+    pub async fn get_products(
+        &self,
+        page: i64,
+        limit: i64,
+    ) -> Result<Vec<ProductListItemResponse>, AppError> {
+        let offset = (page - 1) * limit;
+
+        let products = sqlx::query_as::<_, ProductListItemResponse>(
+                r#"
+                SELECT
+                    p.id
+                    p.name,
+                    p.slug,
+                    p.base_price
+                    (SELECT image_url FROM product_images where product_id = p.id LIMIT 1) as thumbnail
+                FROM products p
+                ORDER BY p.created_at DESC
+                LIMIT $1 OFFSET $2
+            "#
+        )
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Lỗi lấy danh sách sản phẩm: {:?}",e);
+            AppError::Database(e)
+        })?;
+        Ok(products)
     }
 }

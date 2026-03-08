@@ -1,3 +1,5 @@
+use std::fmt;
+
 use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
@@ -46,4 +48,25 @@ pub struct ProductDetailResponse {
 pub struct ProductListQuery {
     pub page: Option<i64>,
     pub limit: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct ProductListItemResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub slug: String,
+    pub base_price: BigDecimal,
+    // only take 1 img for display main product
+    pub thumbnail: Option<String>,
+}
+
+impl fmt::Display for ProductListQuery {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "page:{}_limit:{}",
+            self.page.unwrap_or(1),
+            self.limit.unwrap_or(10)
+        )
+    }
 }

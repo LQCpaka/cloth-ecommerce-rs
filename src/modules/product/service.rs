@@ -5,7 +5,10 @@ use uuid::Uuid;
 use crate::{
     error::AppError,
     modules::product::{
-        dto::{CreateProductRequest, CreateVariantRequest, ProductDetailResponse},
+        dto::{
+            CreateProductRequest, CreateVariantRequest, ProductDetailResponse,
+            ProductListItemResponse, ProductListQuery,
+        },
         model::{Product, ProductVariant},
         repository::ProductRepository,
     },
@@ -47,5 +50,16 @@ impl ProductService {
         product_id: Uuid,
     ) -> Result<ProductDetailResponse, AppError> {
         self.repo.get_product_detail(product_id).await
+    }
+
+    pub async fn get_products(
+        &self,
+        query: ProductListQuery,
+    ) -> Result<Vec<ProductListItemResponse>, AppError> {
+        // take default as page 1, each page take 10
+        let page = query.page.unwrap_or(1).max(1); // prevent customer set neg number (e.g: -8)
+        let limit = query.limit.unwrap_or(10).clamp(1, 100);
+
+        self.repo.get_products(page, limit).await
     }
 }
