@@ -123,12 +123,25 @@ impl RedisService {
         Ok(parsed)
     }
 
+    // update cart (override)
     pub async fn hset(&self, key: &str, field: &str, value: i32) -> Result<(), AppError> {
         let mut conn = self.conn().await?;
 
         let _: usize = conn.hset(key, field, value).await.map_err(|e| {
             tracing::error!("Lỗi Redis HSET: {:?}", e);
             AppError::Redis("Lỗi cập nhật số lượng giỏ hàng".to_string())
+        })?;
+
+        Ok(())
+    }
+
+    // Delete from cart
+    pub async fn hdel(&self, key: &str, field: &str) -> Result<(), AppError> {
+        let mut conn = self.conn().await?;
+
+        let _: usize = conn.hdel(key, field).await.map_err(|e| {
+            tracing::error!("Lỗi Redis HDEL: {:?}", e);
+            AppError::Redis("Lỗi xóa sản phẩm khỏi giỏ hàng".to_string())
         })?;
 
         Ok(())
