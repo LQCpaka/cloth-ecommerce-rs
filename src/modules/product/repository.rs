@@ -184,40 +184,4 @@ impl ProductRepository {
         })?;
         Ok(products)
     }
-
-    pub async fn get_variants_for_cart(
-        &self,
-        variant_ids: &[Uuid],
-    ) -> Result<Vec<CartItemDb>, AppError> {
-        // Nếu giỏ hàng trống thì khỏi gọi DB cho đỡ mệt
-        if variant_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let items = sqlx::query_as::<_, CartItemDb>(
-                r#"
-                SELECT
-                    v.id as variant_id,
-                    p.name as product_name,
-                    v.sku,
-                    -- Cực hay: Nếu size này có giá riêng (price_override) thì lấy, ko thì lấy giá gốc
-                    COALESCE(v.price_override, p.base_price) as price,
-                    -- Lấy 1 tấm hình làm đại diện
-                    (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as thumbnail
-                FROM product_variants v
-                JOIN products p ON v.product_id = p.id
-                -- Tìm tất cả các variant nằm trong danh sách truyền vào
-                WHERE v.id = ANY($1)
-                "#
-            )
-            .bind(variant_ids)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(|e| {
-                tracing::error!("Lỗi lấy thông tin giỏ hàng từ DB: {:?}", e);
-                AppError::Database(e)
-            })?;
-
-        Ok(items)
-    }
 }
