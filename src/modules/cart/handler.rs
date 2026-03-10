@@ -1,6 +1,12 @@
 use std::sync::Arc;
 
-use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
+use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
@@ -8,7 +14,10 @@ use crate::{
     error::AppError,
     modules::{
         auth::guard::AuthUser,
-        cart::{dto::AddToCartRequest, service::CartService},
+        cart::{
+            dto::{AddToCartRequest, UpdateCartItemRequest},
+            service::CartService,
+        },
     },
     shared::services::redis_service::RedisService,
 };
@@ -68,6 +77,53 @@ pub async fn add_to_cart(
             "status": "success",
             "message": "Đã thêm sản phẩm vào giỏ hàng!",
         })),
+    )
+        .into_response())
+}
+
+// API: PUT /api/v1/cart/:variant_id
+pub async fn update_cart_item(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(variant_id): Path<Uuid>, // Lấy ID món hàng từ URL
+    Json(payload): Json<UpdateCartItemRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    if let Err(_e) = payload.validate() {
+        return Err(AppError::BadRequest("Số lượng không hợp lệ!".to_string()));
+    }
+
+    let cart_service = CartService::new(
+        Arc::new(RedisService::new(state.redis_pool.clone())),
+        state.product_repo.clone(),
+    );
+
+    cart_service
+        .update_item_quantity(user.id, variant_id, payload.quantity)
+        .await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({"status": "success", "message": "Đã cập nhật số lượng!"})),
+    )
+        .into_response())
+}
+
+// API: DELETE /api/v1/cart/:variant_id
+pub async fn remove_from_cart(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(variant_id): Path<Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    let cart_service = CartService::new(
+        Arc::new(RedisService::new(state.redis_pool.clone())),
+        state.product_repo.clone(),
+    );
+
+    cart_service.remove_item(user.id, variant_id).await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({"status": "success", "message": "Đã xóa khỏi giỏ hàng!"})),
     )
         .into_response())
 }

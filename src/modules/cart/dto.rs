@@ -43,3 +43,9 @@ pub struct AddToCartRequest {
     #[validate(range(min = 1, message = "Số lượng thêm vào giỏ hàng phải từ 1 trở lên!"))]
     pub quantity: i32,
 }
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateCartItemRequest {
+    #[validate(range(min = 1, message = "Số lượng phải từ 1 trở lên!"))]
+    pub quantity: i32,
+}
