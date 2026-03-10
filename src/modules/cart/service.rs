@@ -101,4 +101,26 @@ impl CartService {
 
         Ok(CartResponse { items, total_price })
     }
+
+    pub async fn update_item_quantity(
+        &self,
+        user_id: Uuid,
+        variant_id: Uuid,
+        quantity: i32,
+    ) -> Result<(), AppError> {
+        let cart_key = format!("cart:{}", user_id);
+        let field = variant_id.to_string();
+
+        // Ở đây mình dùng HSET để chốt thẳng số lượng khách nhập (VD khách gõ số 5 thì set là 5 luôn)
+        self.redis_service.hset(&cart_key, &field, quantity).await?;
+        Ok(())
+    }
+
+    pub async fn remove_item(&self, user_id: Uuid, variant_id: Uuid) -> Result<(), AppError> {
+        let cart_key = format!("cart:{}", user_id);
+        let field = variant_id.to_string();
+
+        self.redis_service.hdel(&cart_key, &field).await?;
+        Ok(())
+    }
 }
