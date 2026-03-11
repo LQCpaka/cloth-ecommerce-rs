@@ -9,7 +9,8 @@ use crate::{
     },
     modules::{
         auth::AuthRepository, category::repository::CategoryRepository,
-        product::repository::ProductRepository, user::repository::UserRepository,
+        order::repository::OrderRepository, product::repository::ProductRepository,
+        user::repository::UserRepository,
     },
     shared::{ports::mail::MailService, services::jwt::TokenService},
 };
@@ -30,6 +31,7 @@ pub struct AppState {
     pub user_repo: Arc<UserRepository>,
     pub category_repo: Arc<CategoryRepository>,
     pub product_repo: Arc<ProductRepository>,
+    pub order_repo: Arc<OrderRepository>,
 }
 
 impl AppState {
@@ -51,6 +53,8 @@ impl AppState {
         let user_repo: Arc<UserRepository> = Arc::new(UserRepository::new(db.clone()));
         let category_repo: Arc<CategoryRepository> = Arc::new(CategoryRepository::new(db.clone()));
         let product_repo: Arc<ProductRepository> = Arc::new(ProductRepository::new(db.clone()));
+        let order_repo: Arc<OrderRepository> = Arc::new(OrderRepository::new(db.clone()));
+
         //=======================================================
         // ======================| SERVICE |=====================
         //=======================================================
@@ -71,6 +75,7 @@ impl AppState {
             user_repo,
             category_repo,
             product_repo,
+            order_repo,
             upload_service,
         }
     }

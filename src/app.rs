@@ -74,4 +74,5 @@ fn api_v1() -> Router<AppState> {
         .nest("/carts", modules::cart::cart_router())
         .nest("/categories", modules::category::category_router())
         .nest("/products", modules::product::product_router())
+        .nest("/orders", modules::order::order_router())
 }
