@@ -32,7 +32,7 @@ impl CartService {
         quantity: i32,
     ) -> Result<(), AppError> {
         // Name cart for user
-        let cart_key = format!("cart;{}", user_id);
+        let cart_key = format!("cart:{}", user_id);
 
         let field = variant_id.to_string();
 
