@@ -8,9 +8,9 @@ use crate::{
         mail::ResendMailService, redis::client::RedisInfra, storage::r2::UploadService,
     },
     modules::{
-        auth::AuthRepository, category::repository::CategoryRepository,
-        order::repository::OrderRepository, product::repository::ProductRepository,
-        user::repository::UserRepository,
+        admin::repository::AdminRepository, auth::AuthRepository,
+        category::repository::CategoryRepository, order::repository::OrderRepository,
+        product::repository::ProductRepository, user::repository::UserRepository,
     },
     shared::{ports::mail::MailService, services::jwt::TokenService},
 };
@@ -27,6 +27,7 @@ pub struct AppState {
     pub token_service: Arc<TokenService>,
     pub upload_service: Arc<UploadService>,
     // ==================| REPO STATE |======================
+    pub admin_repo: Arc<AdminRepository>,
     pub auth_repo: Arc<AuthRepository>,
     pub user_repo: Arc<UserRepository>,
     pub category_repo: Arc<CategoryRepository>,
@@ -49,6 +50,7 @@ impl AppState {
         //=======================================================
         // =====================| REPO STATE |===================
         //=======================================================
+        let admin_repo: Arc<AdminRepository> = Arc::new(AdminRepository::new(db.clone()));
         let auth_repo: Arc<AuthRepository> = Arc::new(AuthRepository::new(db.clone()));
         let user_repo: Arc<UserRepository> = Arc::new(UserRepository::new(db.clone()));
         let category_repo: Arc<CategoryRepository> = Arc::new(CategoryRepository::new(db.clone()));
@@ -66,17 +68,21 @@ impl AppState {
             config.public_asset_url.clone(), // Cái tên miền images.domain.com á
         ));
         Self {
+            // Config
+            config,
             db,
+            // Service
             redis_pool,
             mail_service,
+            upload_service,
             token_service,
-            config,
+            // Repo
+            admin_repo,
             auth_repo,
             user_repo,
             category_repo,
             product_repo,
             order_repo,
-            upload_service,
         }
     }
 }
