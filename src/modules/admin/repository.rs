@@ -1,4 +1,4 @@
-use sqlx::{Error, PgPool};
+use sqlx::PgPool;
 
 pub struct AdminRepository {
     pool: PgPool,
@@ -9,16 +9,26 @@ impl AdminRepository {
         Self { pool }
     }
 
-    pub async fn delete_user(&self, email: &str) -> Result<(), Error> {
-        let user = sqlx::query!(
+    pub async fn delete_user(&self, email: &str) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!("DELETE FROM users WHERE email = $1", email)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(result.rows_affected())
+    }
+
+    pub async fn ban_user(&self, email: &str) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(
             r#"
-                DELETE FROM users WHERE email = $1
+            UPDATE users
+            SET status = 'banned'
+            WHERE email = $1
             "#,
             email
         )
         .execute(&self.pool)
         .await?;
 
-        Ok(())
+        Ok(result.rows_affected())
     }
 }

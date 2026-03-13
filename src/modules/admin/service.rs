@@ -15,8 +15,10 @@ impl AdminService {
     }
 
     pub async fn delete_user(&self, req: DeleteAccountRequest) -> Result<(), AppError> {
-        if self.admin_repo.delete_user(&req.email).await? {
-            return Err(AppError::Conflict("User did not exists!".into()));
+        let affected = self.admin_repo.delete_user(&req.email).await?;
+
+        if affected == 0 {
+            return Err(AppError::NotFound("User does not exist".into()));
         }
 
         Ok(())
