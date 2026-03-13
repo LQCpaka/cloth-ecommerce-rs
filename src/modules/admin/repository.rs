@@ -9,7 +9,7 @@ impl AdminRepository {
         Self { pool }
     }
 
-    pub async fn delete_user(&self, email: String) -> Result<(), Error> {
+    pub async fn delete_user(&self, email: &str) -> Result<(), Error> {
         let user = sqlx::query!(
             r#"
                 DELETE FROM users WHERE email = $1
