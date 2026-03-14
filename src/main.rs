@@ -10,8 +10,6 @@ mod telemetry;
 use crate::app_state::AppState;
 
 use config::Config;
-use sqlx::ConnectOptions;
-use sqlx::postgres::PgPoolOptions;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,13 +27,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ===================================================
     // =============| DATABASE CONNECTION |===============
     // ===================================================
-    let db_options: sqlx::postgres::PgConnectOptions = config.database_url.parse()?;
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .connect_with(db_options.disable_statement_logging())
+    let pool = infrastructure::db::create_pool(&config.database_url)
         .await
-        .expect("Failed to connect to Database");
-    // Connect to DB, turn off log query
+        .expect("Failed to coneect to database");
     tracing::info!("Successfully connected to Database!");
 
     // ===================================================
