@@ -80,4 +80,41 @@ impl UserRepository {
 
         Ok(address_id)
     }
+
+    pub async fn get_address_snapshot(
+        &self,
+        address_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Option<serde_json::Value>, AppError> {
+        let record = sqlx::query!(
+            r#"
+                SELECT recipient_name, recipient_phone, address_line, ward, district, city
+                FROM user_addresses
+                WHERE id = $1 AND user_id = $2
+                "#,
+            address_id,
+            user_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Lỗi lấy địa chỉ: {:?}", e);
+            AppError::Database(e)
+        })?;
+
+        // Nếu tìm thấy, chuyển nó thành dạng JSONB để nhét vào bảng orders
+        if let Some(row) = record {
+            let snapshot = serde_json::json!({
+                "recipient_name": row.recipient_name,
+                "recipient_phone": row.recipient_phone,
+                "address_line": row.address_line,
+                "ward": row.ward,
+                "district": row.district,
+                "city": row.city
+            });
+            Ok(Some(snapshot))
+        } else {
+            Ok(None)
+        }
+    }
 }

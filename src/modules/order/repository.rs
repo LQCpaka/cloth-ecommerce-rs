@@ -15,32 +15,35 @@ impl OrderRepository {
     pub async fn create_order(
         &self,
         user_id: Uuid,
-        address_id: Uuid,
-        address_snapshot: serde_json::Value, // 👈 Nhận snapshot dạng JSON
+        address_id: Uuid,                    // 👈 Nhận ID
+        address_snapshot: serde_json::Value, // 👈 Nhận Snapshot
         total_amount: &BigDecimal,
+        shipping_fee: &BigDecimal,
+        notes: Option<&str>,
         cart_items: &[CartItemResponse],
     ) -> Result<Uuid, AppError> {
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.pool.begin().await.map_err(AppError::Database)?;
 
+        // Nhét đủ các cột theo file sql của vợ
         let order_id: Uuid = sqlx::query_scalar(
             r#"
-                INSERT INTO orders (
-                    user_id,
-                    address_id,
-                    shipping_address_snapshot,
-                    total_amount,
-                    status
-                )
-                VALUES ($1, $2, $3, $4, 'pending')
-                RETURNING id
-                "#,
+            INSERT INTO orders (user_id, address_id, shipping_address_snapshot, total_amount, shipping_fee, notes, status, payment_status)
+            VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'pending')
+            RETURNING id
+            "#
         )
         .bind(user_id)
-        .bind(address_id) // $2
-        .bind(address_snapshot) // $3 (SQLx tự hiểu JSONB)
-        .bind(total_amount) // $4
+        .bind(address_id)
+        .bind(address_snapshot) // SQLx tự parse cái này thành JSONB (quá ngon!)
+        .bind(total_amount)
+        .bind(shipping_fee)
+        .bind(notes)
         .fetch_one(&mut *tx)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("Lỗi lưu đơn hàng gốc: {:?}", e);
+            AppError::Database(e)
+        })?;
 
         // 2. LƯU CHI TIẾT VÀ TRỪ KHO
         for item in cart_items {
