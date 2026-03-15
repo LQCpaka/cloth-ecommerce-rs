@@ -8,9 +8,12 @@ use crate::{
         mail::ResendMailService, redis::client::RedisInfra, storage::r2::UploadService,
     },
     modules::{
-        admin::repository::AdminRepository, auth::AuthRepository,
-        category::repository::CategoryRepository, order::repository::OrderRepository,
-        product::repository::ProductRepository, user::repository::UserRepository,
+        admin::repository::AdminRepository,
+        auth::AuthRepository,
+        category::repository::CategoryRepository,
+        order::repository::OrderRepository,
+        product::repository::ProductRepository,
+        user::{repository::UserRepository, service::UserService},
     },
     shared::{ports::mail::MailService, services::jwt::TokenService},
 };
@@ -26,6 +29,8 @@ pub struct AppState {
     pub mail_service: Arc<dyn MailService>,
     pub token_service: Arc<TokenService>,
     pub upload_service: Arc<UploadService>,
+    // =============| BUSINESS SERVICE STATE |===============
+    pub user_service: Arc<UserService>,
     // ==================| REPO STATE |======================
     pub admin_repo: Arc<AdminRepository>,
     pub auth_repo: Arc<AuthRepository>,
@@ -67,6 +72,10 @@ impl AppState {
             config.cf_r2_bucket.clone(),
             config.public_asset_url.clone(), // Cái tên miền images.domain.com á
         ));
+        //=======================================================
+        // =================| BUSINESS SERVICE |=================
+        //=======================================================
+        let user_service: Arc<UserService> = Arc::new(UserService::new(user_repo.clone()));
         Self {
             // Config
             config,
@@ -76,6 +85,8 @@ impl AppState {
             mail_service,
             upload_service,
             token_service,
+            // Business Service
+            user_service,
             // Repo
             admin_repo,
             auth_repo,

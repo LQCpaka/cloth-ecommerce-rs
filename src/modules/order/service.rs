@@ -32,24 +32,36 @@ impl OrderService {
         }
     }
     pub async fn checkout(&self, user_id: Uuid, req: CheckoutRequest) -> Result<Uuid, AppError> {
-        // 1. Lấy giỏ hàng hiện tại để biết khách định mua gì
-        let cart = self.cart_service.get_cart(user_id).await?;
-        if cart.items.is_empty() {
-            return Err(AppError::BadRequest(
-                "Giỏ hàng trống rỗng, mua gì mà mua!".into(),
-            ));
-        }
+        // 1. Lấy thông tin địa chỉ từ DB (giả sử vợ có AddressRepo)
+        let address = self
+            .address_repo
+            .find_by_id(req.address_id, user_id)
+            .await?
+            .ok_or(AppError::NotFound("Địa chỉ không tồn tại!".into()))?;
 
-        // 2. Lưu vào Database (Transaction đã lo hết ở Repo)
-        let shipping_fee = BigDecimal::from(0); // Tạm thời free ship cho vợ yêu
+        // 2. TẠO SNAPSHOT: Chuyển object địa chỉ thành JSON để lưu vào bảng orders
+        // Sau này khách có đổi địa chỉ trong Profile thì Snapshot này vẫn giữ nguyên thông tin lúc mua
+        let address_snapshot = serde_json::json!({
+            "recipient_name": address.recipient_name,
+            "recipient_phone": address.recipient_phone,
+            "address_line": address.address_line,
+            "ward": address.ward,
+            "district": address.district,
+            "city": address.city
+        });
+
+        // 3. Lấy giỏ hàng như cũ...
+        let cart = self.cart_service.get_cart(user_id).await?;
+
+        // 4. Truyền thêm address_id và snapshot vào Repo
         let order_id = self
             .order_repo
             .create_order(
                 user_id,
+                req.address_id,   // 👈 Thêm bạn này
+                address_snapshot, // 👈 Thêm bạn này (kiểu serde_json::Value)
                 &cart.total_price,
-                &shipping_fee,
-                req.note.as_ref(),
-                &cart.items,
+                // ... các tham số khác
             )
             .await?;
 

@@ -49,7 +49,7 @@ pub async fn get_cart(
 // API: POST /api/v1/cart
 pub async fn add_to_cart(
     State(state): State<AppState>,
-    user: AuthUser, // 👈 Bắt buộc phải có thẻ VIP (đăng nhập) mới được lấy xe đẩy
+    user: AuthUser,
     Json(payload): Json<AddToCartRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // 1. Kiểm tra xem khách có nhập bậy bạ không (ví dụ: số lượng âm)

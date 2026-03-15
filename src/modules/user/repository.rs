@@ -1,7 +1,13 @@
 use sqlx::{Error, PgPool};
 use uuid::Uuid;
 
-use crate::modules::user::model::{AuthProvider, User, UserRole, UserStatus};
+use crate::{
+    error::AppError,
+    modules::user::{
+        dto::CreateAddressRequest,
+        model::{AuthProvider, User, UserRole, UserStatus},
+    },
+};
 
 pub struct UserRepository {
     pool: PgPool,
@@ -38,5 +44,40 @@ impl UserRepository {
         .await?;
 
         Ok(user)
+    }
+
+    pub async fn create_address(
+        &self,
+        user_id: Uuid,
+        req: CreateAddressRequest,
+    ) -> Result<Uuid, AppError> {
+        // Tip: If you want the client to set is_default = true later,
+        // you can update the old addresses to false here first.
+        // For now, just use normal INSERT:
+
+        let address_id: Uuid = sqlx::query_scalar(
+                r#"
+                INSERT INTO user_addresses
+                (user_id, recipient_name, recipient_phone, address_line, ward, district, city, is_default)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING id
+                "#
+            )
+            .bind(user_id)
+            .bind(req.recipient_name)
+            .bind(req.recipient_phone)
+            .bind(req.address_line)
+            .bind(req.ward)
+            .bind(req.district)
+            .bind(req.city)
+            .bind(req.is_default.unwrap_or(false)) // Mặc định false nếu FE không gửi
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Lỗi lưu địa chỉ: {:?}", e);
+                AppError::Database(e)
+            })?;
+
+        Ok(address_id)
     }
 }

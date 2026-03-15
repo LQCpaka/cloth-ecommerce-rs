@@ -2,11 +2,15 @@ use std::time::Duration;
 
 use axum::{Json, extract::State, response::IntoResponse};
 use reqwest::StatusCode;
+use validator::Validate;
 
 use crate::{
     app_state::AppState,
     error::AppError,
-    modules::{auth::guard::AuthUser, user::dto::UserProfileResponse},
+    modules::{
+        auth::guard::AuthUser,
+        user::dto::{CreateAddressRequest, UserProfileResponse},
+    },
     shared::services::redis_service::RedisService,
 };
 
@@ -64,6 +68,33 @@ pub async fn get_my_profile(
         Json(serde_json::json!({
             "status": "success",
             "data": profile_response
+        })),
+    )
+        .into_response())
+}
+
+pub async fn add_address(
+    State(state): State<AppState>,
+    user: AuthUser, // Lấy ID khách hàng từ Token đăng nhập
+    Json(payload): Json<CreateAddressRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    // Validate số điện thoại, tên...
+    payload
+        .validate()
+        .map_err(|e| AppError::BadRequest(format!("Lỗi dữ liệu: {}", e)))?;
+
+    // Giả sử vợ nhét user_service trong AppState, hoặc tự new() ở đây
+    let address_id = state
+        .user_service
+        .add_user_address(user.id, payload)
+        .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "status": "success",
+            "message": "Đã thêm địa chỉ giao hàng thành công!",
+            "data": { "address_id": address_id }
         })),
     )
         .into_response())
