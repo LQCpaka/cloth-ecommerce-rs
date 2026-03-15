@@ -7,8 +7,7 @@ mod modules;
 mod shared;
 mod telemetry;
 
-use crate::app_state::AppState;
-
+use app_state::AppState;
 use config::Config;
 
 #[tokio::main]
