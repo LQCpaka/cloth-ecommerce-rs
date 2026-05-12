@@ -29,19 +29,5 @@ Built on top of **Tokio** (async runtime) and **Tower** (middleware/service abst
 
 > Why Rust over Golang? Simple — no garbage collector means predictable, low memory consumption at scale. This project is also a personal challenge to push deeper into systems programming with a production-grade use case., only mono repo. I challenge myself with a brandnew and hard development framework (actix harder, I know), to learn how a programming language that not use GC, to see how far I can go.
 
-## ℹ️ STATUS
-This project is actively under development. Both backend and (planned) frontend are being built simultaneously.
-
-- [x] Project setup & architecture
-- [x] Database migrations
-- [x] Docker dev environment
-- [X] Auth module (JWT)
-- [X] Product module
-- [X] Image upload (R2)
-- [X] Rate limiting (Redis)
-- [ ] Frontend
-- [ ] Order module
-- [ ] Etc
-
 ---
 <p align="center">Made with 🦀 and a bit of suffering</p>
